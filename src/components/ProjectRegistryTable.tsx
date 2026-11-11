@@ -246,24 +246,13 @@ export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
       {/* Open Vertical Space in Middle of Container (Click-through to PNG space on the right) */}
       <div className="flex-1 min-h-[140px] pointer-events-none" />
 
-      {/* BOTTOM EDGE OF CONTAINER: Left-aligned stacked rows placed right at the bottom */}
-      <div className="relative z-10 pointer-events-none w-full px-4 sm:px-6 pt-3 pb-2.5 border-t border-[#181715]/[0.07] dark:border-white/[0.06] flex flex-col items-start justify-end space-y-1 font-mono text-[11px] text-[#5C5852] dark:text-[#A6A29A] text-left">
+      {/* BOTTOM EDGE OF CONTAINER: Left-aligned row placed right at the bottom */}
+      <div className="relative z-10 pointer-events-none w-full px-4 sm:px-6 pt-3 pb-2.5 border-t border-[#181715]/[0.07] dark:border-white/[0.06] flex flex-col items-start justify-end font-mono text-[11px] text-[#5C5852] dark:text-[#A6A29A] text-left">
         <div className="flex flex-wrap items-center justify-start gap-2 leading-none">
-          <span>AGGREGATED FROM SECTION 02</span>
-          <span className="text-[#8C867E]/60">·</span>
-          <span>MONITORED SYSTEMS:</span>
-          <span className="font-semibold text-[#181715] dark:text-[#F3F1EC] tabular-nums">
-            {projects.length}
-          </span>
-          <span className="text-[#8C867E]/60">·</span>
           <span>AGGREGATE USERS:</span>
           <span className="font-semibold text-[#181715] dark:text-[#F3F1EC] tabular-nums">
             {totalUsers.toLocaleString()}
           </span>
-        </div>
-
-        <div className="text-[10px] tracking-[0.1em] uppercase text-[#8C867E] dark:text-[#6E6A63] leading-none">
-          AUDITABLE PDF & LOG MODAL PERSISTED · TAP RIGHT CORNER FOR PNG
         </div>
       </div>
     </section>
