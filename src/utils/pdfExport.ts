@@ -15,7 +15,7 @@ export const exportProjectsAuditPDF = (projects: Project[], logs: AuditLog[]) =>
   doc.setFont('courier', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(20, 20, 20);
-  doc.text('KERN // SOFTWARE PROJECT REGISTRY & AUDIT LOG', 15, currentY);
+  doc.text('ZOO // SOFTWARE PROJECT REGISTRY & AUDIT LOG', 15, currentY);
 
   currentY += 7;
   doc.setFont('courier', 'normal');
@@ -157,11 +157,11 @@ export const exportProjectsAuditPDF = (projects: Project[], logs: AuditLog[]) =>
     doc.setFont('courier', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(140, 140, 140);
-    doc.text(`KERN OPERATING SYSTEM — PAGE ${i} OF ${pageCount}`, 15, 290);
+    doc.text(`ZOO OPERATING SYSTEM — PAGE ${i} OF ${pageCount}`, 15, 290);
     doc.text(`CONFIDENTIAL ENGINEERING AUDIT REPORT`, pageWidth - 65, 290);
   }
 
   // Save the PDF
-  const filename = `kern_project_registry_${new Date().toISOString().substring(0, 10)}.pdf`;
+  const filename = `zoo_project_registry_${new Date().toISOString().substring(0, 10)}.pdf`;
   doc.save(filename);
 };

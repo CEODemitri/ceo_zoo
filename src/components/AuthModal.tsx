@@ -49,7 +49,7 @@ export const AuthModal: React.FC = () => {
               {mode === 'signin' ? 'OPERATOR SIGN IN' : 'REGISTER NEW OPERATOR'}
             </h2>
             <p className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-              KERN // AUTHENTICATION PROTOCOL
+              Zoo // AUTHENTICATION PROTOCOL
             </p>
           </div>
           <button

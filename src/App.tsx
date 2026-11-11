@@ -260,9 +260,9 @@ function DashboardContent() {
       />
 
       {/* Main Dashboard Canvas (Big open Swiss space, high-precision typography) */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-6 sm:px-10 lg:px-12 py-12 sm:py-20 space-y-16 sm:space-y-24">
         {/* Editorial Sub-Header & Status Strip */}
-        <div className="border-b border-neutral-200 dark:border-neutral-800 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="border-b border-neutral-200 dark:border-neutral-800 pb-8 sm:pb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="font-mono text-[11px] text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-1">
               SYSTEM DASHBOARD // WORKSPACE SPECIFICATION
@@ -273,11 +273,6 @@ function DashboardContent() {
           </div>
 
           <div className="font-mono text-xs text-neutral-500 dark:text-neutral-400 flex flex-wrap items-center gap-2">
-            <span>OPERATOR: </span>
-            <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-              {user ? user.username : 'GUEST'}
-            </span>
-            <span>·</span>
             <span>STATUS: </span>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               NOMINAL
@@ -325,7 +320,7 @@ function DashboardContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="font-bold text-neutral-900 dark:text-neutral-100 uppercase">
-              KERN // OS
+              Zoo
             </span>
             <span className="text-neutral-300 dark:text-neutral-700">·</span>
             <span>SWISS MODERNIST PROJECT MANAGEMENT ARCHITECTURE</span>

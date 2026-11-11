@@ -31,7 +31,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             }}
             className="font-mono text-sm font-bold tracking-tight text-neutral-950 dark:text-neutral-50 whitespace-nowrap hover:opacity-80"
           >
-            KERN // OS
+            Zoo
           </a>
           <span className="hidden sm:inline font-mono text-[11px] text-neutral-400 dark:text-neutral-600">
             SYSTEM CONSOLE

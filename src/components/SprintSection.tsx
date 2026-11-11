@@ -86,10 +86,10 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
   };
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-10 sm:space-y-14">
       {/* Section Header */}
-      <div className="border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-800">
+      <div className="border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 sm:p-10 lg:p-12 space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-6 pb-6 border-b border-neutral-200 dark:border-neutral-800">
           <div>
             <h2 className="font-mono text-sm sm:text-base font-bold tracking-tight text-neutral-950 dark:text-neutral-50 uppercase">
               02. ACTIVE SPRINT DELIVERABLES // TASK QUEUES
@@ -176,7 +176,7 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
       </div>
 
       {/* Projects Sprint Cards */}
-      <div className="space-y-6">
+      <div className="space-y-10 sm:space-y-14">
         {projects.map((project) => {
           // Filter tasks belonging to this project
           const projectTasks = tasks.filter((t) => t.projectId === project.id);
@@ -203,9 +203,9 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
               id={`project-${project.id}`}
               className="border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950"
             >
-              {/* Project Card Header */}
-              <div className="p-4 sm:p-6 border-b border-neutral-200 dark:border-neutral-800">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              {/* Project Card Header with generous open space */}
+              <div className="p-6 sm:p-10 lg:p-12 border-b border-neutral-200 dark:border-neutral-800 space-y-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                   {/* Title Area: Project Name, Version Number */}
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-baseline gap-2.5">
@@ -304,15 +304,15 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
               )}
 
               {/* Tasks List */}
-              <div className="p-4 sm:p-6 bg-white dark:bg-neutral-950">
-                <div className="mb-3 flex items-center justify-between text-xs font-mono">
+              <div className="p-6 sm:p-10 lg:p-12 bg-white dark:bg-neutral-950">
+                <div className="mb-5 flex items-center justify-between text-xs font-mono">
                   <span className="text-[11px] uppercase tracking-wider text-neutral-400">
                     NEXT SPRINT DELIVERABLES ({displayedTasks.length})
                   </span>
                 </div>
 
                 {displayedTasks.length === 0 ? (
-                  <div className="py-6 text-center border border-dashed border-neutral-200 dark:border-neutral-800 font-mono text-xs text-neutral-400">
+                  <div className="py-10 text-center border border-dashed border-neutral-200 dark:border-neutral-800 font-mono text-xs text-neutral-400">
                     No tasks match the active filters. Adjust your search or add a new sprint task below.
                   </div>
                 ) : (
@@ -323,7 +323,7 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
                       return (
                         <div
                           key={task.id}
-                          className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/30 transition-none"
+                          className="py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/30 transition-none"
                         >
                           {/* Task Checkbox & Title */}
                           <div className="flex items-start gap-3 flex-1">

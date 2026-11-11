@@ -1,6 +1,8 @@
 {
-  "name": "KERN // Software Project Dashboard",
+  "name": "Zoo",
   "description": "Notes meets Notion meets GitHub: a high-precision Swiss-futuristic software project tracker and sprint console with 7-arc rainbow progress indicators.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
