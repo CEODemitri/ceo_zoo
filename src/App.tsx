@@ -153,6 +153,25 @@ function DashboardContent() {
     );
   };
 
+  const handleUpdateTaskTitle = (taskId: string, newTitle: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? { ...t, title: newTitle, updatedAt: new Date().toISOString() }
+          : t
+      )
+    );
+    touchProject(task.projectId);
+    recordLog(
+      task.projectId,
+      'CONFIG_UPDATE',
+      `Edited task title to "${newTitle}"`
+    );
+  };
+
   const handleAddTask = (projectId: string, title: string, tags: string[]) => {
     const newTask: Task = {
       id: `task-${Date.now()}`,
@@ -170,11 +189,46 @@ function DashboardContent() {
     recordLog(projectId, 'CREATE', `Created sprint task: "${title}"`);
   };
 
+  const [deletedTaskUndo, setDeletedTaskUndo] = useState<{
+    task: Task;
+    index: number;
+  } | null>(null);
+  const undoTimerRef = React.useRef<number | null>(null);
+
   const handleDeleteTask = (taskId: string) => {
-    const task = tasks.find((t) => t.id === taskId);
-    if (!task) return;
+    const index = tasks.findIndex((t) => t.id === taskId);
+    if (index === -1) return;
+    const task = tasks[index];
+
+    if (undoTimerRef.current) {
+      window.clearTimeout(undoTimerRef.current);
+    }
+
+    setDeletedTaskUndo({ task, index });
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
     touchProject(task.projectId);
+
+    undoTimerRef.current = window.setTimeout(() => {
+      setDeletedTaskUndo(null);
+      undoTimerRef.current = null;
+    }, 5500);
+  };
+
+  const handleUndoDeleteTask = () => {
+    if (!deletedTaskUndo) return;
+    if (undoTimerRef.current) {
+      window.clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+
+    const { task, index } = deletedTaskUndo;
+    setTasks((prev) => {
+      const next = [...prev];
+      next.splice(Math.min(index, next.length), 0, task);
+      return next;
+    });
+    touchProject(task.projectId);
+    setDeletedTaskUndo(null);
   };
 
   // SemVer bump handler (e.g. v3.2.0 -> v3.2.1 or v3.3.0)
@@ -324,6 +378,7 @@ function DashboardContent() {
               tasks={tasks}
               onToggleTaskComplete={handleToggleTaskComplete}
               onUpdateTaskStatus={handleUpdateTaskStatus}
+              onUpdateTaskTitle={handleUpdateTaskTitle}
               onAddTask={handleAddTask}
               onDeleteTask={handleDeleteTask}
               onUpdateProjectDetails={handleUpdateProjectDetails}
@@ -333,6 +388,41 @@ function DashboardContent() {
           </div>
         )}
       </main>
+
+      {/* Swipe-to-Delete Undo Toast Bar */}
+      {deletedTaskUndo && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-8 sm:max-w-md z-50 bg-[#181715] text-[#F3F1EC] dark:bg-[#F3F1EC] dark:text-[#181715] px-4 py-3 shadow-xl flex items-center justify-between gap-4 font-mono text-xs"
+        >
+          <div className="truncate">
+            <span className="text-[#A6A29A] dark:text-[#5C5852] uppercase text-[10px] mr-2">
+              TASK DELETED:
+            </span>
+            <span className="font-sans font-medium">
+              {deletedTaskUndo.task.title}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleUndoDeleteTask}
+              className="px-2.5 py-1 bg-[#D94E28] hover:bg-[#C2411E] text-white font-semibold uppercase tracking-wider text-[11px] whitespace-nowrap cursor-pointer transition-colors"
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeletedTaskUndo(null)}
+              className="px-1.5 py-1 text-[#A6A29A] hover:text-white dark:text-[#5C5852] dark:hover:text-black"
+              aria-label="Dismiss undo notification"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Editorial Studio Footer: Left-aligned stacked rows at top & bottom */}
       <footer className="bg-[#EFECE6] dark:bg-[#141417] pt-3 pb-3 font-mono text-xs text-[#5C5852] dark:text-[#A6A29A] text-left">

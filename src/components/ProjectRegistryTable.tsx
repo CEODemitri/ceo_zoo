@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Project, AuditLog } from '../types';
 import { exportProjectsAuditPDF } from '../utils/pdfExport';
 
@@ -12,7 +12,15 @@ interface ProjectRegistryTableProps {
   onDeleteProject: (projectId: string) => void;
 }
 
+type SortKey = 'name' | 'businessType' | 'startDate' | 'version' | 'activeUsers';
+type SortDir = 'asc' | 'desc';
+
 const STORAGE_PNG_KEY = 'zoo_registry_custom_png_v2';
+
+const parseSemVer = (ver: string): number[] => {
+  const clean = ver.replace(/^v/i, '').split('-')[0];
+  return clean.split('.').map((n) => parseInt(n, 10) || 0);
+};
 
 export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
   projects,
@@ -20,11 +28,51 @@ export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
   onOpenLogModal,
   onOpenNewProject,
   onSelectProject,
-  onBumpVersion,
-  onDeleteProject,
 }) => {
   const totalUsers = projects.reduce((acc, p) => acc + p.activeUsers, 0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir(key === 'activeUsers' || key === 'startDate' || key === 'version' ? 'desc' : 'asc');
+    } else if (sortDir === 'asc') {
+      setSortDir('desc');
+    } else {
+      setSortKey(null);
+    }
+  };
+
+  const sortedProjects = useMemo(() => {
+    if (!sortKey) return projects;
+    const copy = [...projects];
+    copy.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === 'name') {
+        cmp = a.name.localeCompare(b.name);
+      } else if (sortKey === 'businessType') {
+        cmp = a.businessType.localeCompare(b.businessType);
+      } else if (sortKey === 'startDate') {
+        cmp = a.startDate.localeCompare(b.startDate);
+      } else if (sortKey === 'activeUsers') {
+        cmp = a.activeUsers - b.activeUsers;
+      } else if (sortKey === 'version') {
+        const va = parseSemVer(a.version);
+        const vb = parseSemVer(b.version);
+        for (let i = 0; i < 3; i++) {
+          if ((va[i] || 0) !== (vb[i] || 0)) {
+            cmp = (va[i] || 0) - (vb[i] || 0);
+            break;
+          }
+        }
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return copy;
+  }, [projects, sortKey, sortDir]);
 
   // Blank by default (shows the low-opacity elephant cutout until user taps to upload a PNG)
   const [pngImage, setPngImage] = useState<string | null>(() => {
@@ -57,6 +105,15 @@ export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const renderSortIndicator = (key: SortKey) => {
+    if (sortKey !== key) return null;
+    return (
+      <span className="ml-1 text-[#D94E28] dark:text-[#E85D36] font-bold">
+        {sortDir === 'asc' ? '↑' : '↓'}
+      </span>
+    );
   };
 
   return (
@@ -147,56 +204,115 @@ export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
           </button>
         </div>
 
-        {/* Mobile View (< 640px): Zero-Horizontal-Scroll Stacked Project Reference List */}
-        <div className="pointer-events-auto w-full pt-2 sm:hidden divide-y divide-[#181715]/[0.07] dark:divide-white/[0.06] border-t border-b border-[#181715]/[0.08] dark:border-white/[0.07] font-mono">
-          {projects.map((proj) => (
-            <div
-              key={proj.id}
-              onClick={() => onSelectProject(proj.id)}
-              className="py-2.5 flex flex-col items-start justify-between space-y-1 hover:bg-[#E5E0D6]/60 dark:hover:bg-[#1E1E24]/70 cursor-pointer text-left transition-colors"
-            >
-              <div className="w-full flex flex-wrap items-baseline justify-between gap-2 leading-none">
-                <span className="font-sans font-semibold text-[#181715] dark:text-[#F3F1EC] text-xs">
-                  {proj.name}
-                </span>
-                <div className="flex items-center gap-2 text-[11px] tabular-nums">
-                  <span className="font-semibold text-[#D94E28] dark:text-[#E85D36]">
-                    {proj.version}
+        {/* Mobile View (< 640px): Zero-Horizontal-Scroll Touch Sort Bar + Stacked Project Reference List */}
+        <div className="pointer-events-auto w-full pt-2 sm:hidden font-mono">
+          <div className="flex flex-wrap items-center justify-start gap-1.5 pb-1.5 text-[9px] uppercase tracking-wider text-[#8C867E] dark:text-[#6E6A63]">
+            <span>SORT:</span>
+            {(
+              [
+                ['name', 'NAME'],
+                ['businessType', 'TYPE'],
+                ['startDate', 'DATE'],
+                ['version', 'VER'],
+                ['activeUsers', 'USERS'],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => handleSort(key)}
+                className={`px-1.5 py-0.5 transition-colors whitespace-nowrap shrink-0 ${
+                  sortKey === key
+                    ? 'bg-[#D94E28] dark:bg-[#E85D36] text-white font-semibold'
+                    : 'bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#5C5852] dark:text-[#A6A29A]'
+                }`}
+              >
+                {label}
+                {sortKey === key ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+              </button>
+            ))}
+          </div>
+
+          <div className="divide-y divide-[#181715]/[0.07] dark:divide-white/[0.06] border-t border-b border-[#181715]/[0.08] dark:border-white/[0.07]">
+            {sortedProjects.map((proj) => (
+              <div
+                key={proj.id}
+                onClick={() => onSelectProject(proj.id)}
+                className="py-2.5 flex flex-col items-start justify-between space-y-1 hover:bg-[#E5E0D6]/60 dark:hover:bg-[#1E1E24]/70 cursor-pointer text-left transition-colors"
+              >
+                <div className="w-full flex flex-wrap items-baseline justify-between gap-2 leading-none">
+                  <span className="font-sans font-semibold text-[#181715] dark:text-[#F3F1EC] text-xs">
+                    {proj.name}
                   </span>
+                  <div className="flex items-center gap-2 text-[11px] tabular-nums">
+                    <span className="font-semibold text-[#D94E28] dark:text-[#E85D36]">
+                      {proj.version}
+                    </span>
+                    <span className="text-[#8C867E]/60">·</span>
+                    <span className="font-semibold text-[#181715] dark:text-[#F3F1EC]">
+                      {proj.activeUsers.toLocaleString()} USERS
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-full flex flex-wrap items-center justify-start gap-x-2 gap-y-0.5 text-[10px] text-[#5C5852] dark:text-[#A6A29A] leading-tight">
+                  <span>{proj.businessType}</span>
                   <span className="text-[#8C867E]/60">·</span>
-                  <span className="font-semibold text-[#181715] dark:text-[#F3F1EC]">
-                    {proj.activeUsers.toLocaleString()} USERS
+                  <span className="tabular-nums">{proj.startDate}</span>
+                  <span className="text-[#8C867E]/60">·</span>
+                  <span className="text-[#8C867E] dark:text-[#6E6A63] truncate max-w-[180px]">
+                    {proj.details.liveSite.replace(/^https?:\/\//, '')}
                   </span>
                 </div>
               </div>
-
-              <div className="w-full flex flex-wrap items-center justify-start gap-x-2 gap-y-0.5 text-[10px] text-[#5C5852] dark:text-[#A6A29A] leading-tight">
-                <span>{proj.businessType}</span>
-                <span className="text-[#8C867E]/60">·</span>
-                <span className="tabular-nums">{proj.startDate}</span>
-                <span className="text-[#8C867E]/60">·</span>
-                <span className="text-[#8C867E] dark:text-[#6E6A63] truncate max-w-[180px]">
-                  {proj.details.liveSite.replace(/^https?:\/\//, '')}
-                </span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        {/* Desktop/Tablet View (>= 640px): ~25-35% More Compressed Reference Table */}
+        {/* Desktop/Tablet View (>= 640px): ~25-35% More Compressed Reference Table with Clickable Sort Headers */}
         <div className="pointer-events-auto hidden sm:block w-full md:w-[74%] lg:w-[68%] pt-2 overflow-x-auto">
           <table className="w-full text-left font-mono text-[11px] border-collapse">
             <thead>
-              <tr className="border-b border-[#181715]/[0.1] dark:border-white/[0.08] text-[9px] uppercase text-[#8C867E] dark:text-[#6E6A63] tracking-[0.12em]">
-                <th className="py-1.5 pr-3 font-semibold text-left align-top">PROJECT NAME</th>
-                <th className="py-1.5 px-2.5 font-semibold text-left align-top">BUSINESS TYPE</th>
-                <th className="py-1.5 px-2.5 font-semibold text-left align-top whitespace-nowrap">START DATE</th>
-                <th className="py-1.5 px-2.5 font-semibold text-left align-top whitespace-nowrap">VERSION</th>
-                <th className="py-1.5 pl-2.5 font-semibold text-left align-top whitespace-nowrap">ACTIVE USERS</th>
+              <tr className="border-b border-[#181715]/[0.1] dark:border-white/[0.08] text-[9px] uppercase text-[#8C867E] dark:text-[#6E6A63] tracking-[0.12em] select-none">
+                <th
+                  onClick={() => handleSort('name')}
+                  className="py-1.5 pr-3 font-semibold text-left align-top cursor-pointer hover:text-[#181715] dark:hover:text-[#F3F1EC] transition-colors whitespace-nowrap"
+                  title="Click to sort by Project Name"
+                >
+                  PROJECT NAME{renderSortIndicator('name')}
+                </th>
+                <th
+                  onClick={() => handleSort('businessType')}
+                  className="py-1.5 px-2.5 font-semibold text-left align-top cursor-pointer hover:text-[#181715] dark:hover:text-[#F3F1EC] transition-colors whitespace-nowrap"
+                  title="Click to sort by Business Type"
+                >
+                  BUSINESS TYPE{renderSortIndicator('businessType')}
+                </th>
+                <th
+                  onClick={() => handleSort('startDate')}
+                  className="py-1.5 px-2.5 font-semibold text-left align-top cursor-pointer hover:text-[#181715] dark:hover:text-[#F3F1EC] transition-colors whitespace-nowrap"
+                  title="Click to sort by Start Date"
+                >
+                  START DATE{renderSortIndicator('startDate')}
+                </th>
+                <th
+                  onClick={() => handleSort('version')}
+                  className="py-1.5 px-2.5 font-semibold text-left align-top cursor-pointer hover:text-[#181715] dark:hover:text-[#F3F1EC] transition-colors whitespace-nowrap"
+                  title="Click to sort by Version"
+                >
+                  VERSION{renderSortIndicator('version')}
+                </th>
+                <th
+                  onClick={() => handleSort('activeUsers')}
+                  className="py-1.5 pl-2.5 font-semibold text-left align-top cursor-pointer hover:text-[#181715] dark:hover:text-[#F3F1EC] transition-colors whitespace-nowrap"
+                  title="Click to sort by Active Users"
+                >
+                  ACTIVE USERS{renderSortIndicator('activeUsers')}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#181715]/[0.06] dark:divide-white/[0.05]">
-              {projects.map((proj) => (
+              {sortedProjects.map((proj) => (
                 <tr
                   key={proj.id}
                   onClick={() => onSelectProject(proj.id)}

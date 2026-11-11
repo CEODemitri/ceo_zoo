@@ -7,6 +7,7 @@ interface SwipeableTaskRowProps {
   task: Task;
   onToggleTaskComplete: (taskId: string) => void;
   onUpdateTaskStatus: (taskId: string, status: TaskStatus) => void;
+  onUpdateTaskTitle: (taskId: string, newTitle: string) => void;
   onDeleteTask: (taskId: string) => void;
 }
 
@@ -14,10 +15,13 @@ const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
   task,
   onToggleTaskComplete,
   onUpdateTaskStatus,
+  onUpdateTaskTitle,
   onDeleteTask,
 }) => {
   const isDone = task.status === 'done';
   const [offsetX, setOffsetX] = useState(0);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(task.title);
   const startXRef = useRef<number | null>(null);
   const baseOffsetRef = useRef<number>(0);
   const isDraggingRef = useRef(false);
@@ -26,6 +30,7 @@ const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
   const REVEAL_WIDTH = 56;
 
   const handleStart = (clientX: number) => {
+    if (isEditingTitle) return;
     startXRef.current = clientX;
     baseOffsetRef.current = offsetX;
     isDraggingRef.current = true;
@@ -33,7 +38,7 @@ const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
   };
 
   const handleMove = (clientX: number) => {
-    if (!isDraggingRef.current || startXRef.current === null) return;
+    if (isEditingTitle || !isDraggingRef.current || startXRef.current === null) return;
     const deltaX = clientX - startXRef.current;
     if (Math.abs(deltaX) > 4) {
       didMoveRef.current = true;
@@ -54,6 +59,7 @@ const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
   };
 
   const handleWheel = (e: React.WheelEvent) => {
+    if (isEditingTitle) return;
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 8) {
       if (e.deltaX > 0) {
         setOffsetX(-REVEAL_WIDTH);
@@ -61,6 +67,16 @@ const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
         setOffsetX(0);
       }
     }
+  };
+
+  const commitTitleEdit = () => {
+    const trimmed = draftTitle.trim();
+    if (trimmed && trimmed !== task.title) {
+      onUpdateTaskTitle(task.id, trimmed);
+    } else {
+      setDraftTitle(task.title);
+    }
+    setIsEditingTitle(false);
   };
 
   return (
@@ -98,7 +114,7 @@ const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
         style={{ transform: `translateX(${offsetX}px)` }}
         className="relative z-10 bg-[#EFECE6] dark:bg-[#141417] pt-2 pb-2.5 pr-2 flex flex-col items-start justify-between space-y-1.5 hover:bg-[#E7E3DA] dark:hover:bg-[#1B1B20] transition-colors text-left cursor-grab active:cursor-grabbing"
       >
-        {/* Top Row of Task Cell: Checkbox & Task Title */}
+        {/* Top Row of Task Cell: Checkbox & Inline Editable Task Title */}
         <div className="flex items-start justify-start gap-2.5 w-full">
           <button
             type="button"
@@ -119,24 +135,54 @@ const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
             {isDone ? '✓' : ''}
           </button>
 
-          <span
-            onClick={(e) => {
-              if (didMoveRef.current) return;
-              if (offsetX < 0) {
-                setOffsetX(0);
-                return;
-              }
-              e.stopPropagation();
-              onToggleTaskComplete(task.id);
-            }}
-            className={`font-sans text-xs sm:text-sm cursor-pointer select-none leading-snug text-left break-words ${
-              isDone
-                ? 'line-through text-[#8C867E] dark:text-[#6E6A63]'
-                : 'text-[#181715] dark:text-[#F3F1EC] font-medium'
-            }`}
-          >
-            {task.title}
-          </span>
+          {isEditingTitle ? (
+            <input
+              type="text"
+              autoFocus
+              value={draftTitle}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => setDraftTitle(e.target.value)}
+              onBlur={commitTitleEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  commitTitleEdit();
+                } else if (e.key === 'Escape') {
+                  setDraftTitle(task.title);
+                  setIsEditingTitle(false);
+                }
+              }}
+              className="flex-1 font-sans text-xs sm:text-sm px-2 py-0.5 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36] text-left"
+            />
+          ) : (
+            <span
+              onClick={(e) => {
+                if (didMoveRef.current) return;
+                if (offsetX < 0) {
+                  setOffsetX(0);
+                  return;
+                }
+                e.stopPropagation();
+                setDraftTitle(task.title);
+                setIsEditingTitle(true);
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setDraftTitle(task.title);
+                setIsEditingTitle(true);
+              }}
+              title="Tap or double-click to edit task title"
+              className={`font-sans text-xs sm:text-sm cursor-text select-none leading-snug text-left break-words ${
+                isDone
+                  ? 'line-through text-[#8C867E] dark:text-[#6E6A63]'
+                  : 'text-[#181715] dark:text-[#F3F1EC] font-medium hover:text-[#D94E28] dark:hover:text-[#E85D36] transition-colors'
+              }`}
+            >
+              {task.title}
+            </span>
+          )}
         </div>
 
         {/* Bottom Row of Task Cell: Status Selector Only */}
@@ -167,6 +213,7 @@ interface SprintSectionProps {
   tasks: Task[];
   onToggleTaskComplete: (taskId: string) => void;
   onUpdateTaskStatus: (taskId: string, status: TaskStatus) => void;
+  onUpdateTaskTitle: (taskId: string, newTitle: string) => void;
   onAddTask: (projectId: string, title: string, tags: string[]) => void;
   onDeleteTask: (taskId: string) => void;
   onUpdateProjectDetails: (projectId: string, details: ProjectDetails) => void;
@@ -179,6 +226,7 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
   tasks,
   onToggleTaskComplete,
   onUpdateTaskStatus,
+  onUpdateTaskTitle,
   onAddTask,
   onDeleteTask,
   onUpdateProjectDetails,
@@ -873,6 +921,7 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
                           task={task}
                           onToggleTaskComplete={onToggleTaskComplete}
                           onUpdateTaskStatus={onUpdateTaskStatus}
+                          onUpdateTaskTitle={onUpdateTaskTitle}
                           onDeleteTask={onDeleteTask}
                         />
                       ))}
