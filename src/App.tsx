@@ -222,6 +222,18 @@ function DashboardContent() {
     recordLog(projectId, 'CONFIG_UPDATE', 'Updated hosting platform & admin credentials record');
   };
 
+  // Full project update from Section 02 (aggregates into Section 01 reference table)
+  const handleUpdateProject = (updatedProject: Project) => {
+    setProjects((prev) =>
+      prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
+    );
+    recordLog(
+      updatedProject.id,
+      'CONFIG_UPDATE',
+      `Confirmed project edit: "${updatedProject.name}" (${updatedProject.version}, ${updatedProject.activeUsers.toLocaleString()} users)`
+    );
+  };
+
   // Add new project
   const handleAddProject = (newProject: Project) => {
     setProjects((prev) => [newProject, ...prev]);
@@ -260,19 +272,24 @@ function DashboardContent() {
       />
 
       {/* Main Dashboard Canvas (Big open Swiss space, high-precision typography) */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 sm:px-10 lg:px-12 py-12 sm:py-20 space-y-16 sm:space-y-24">
-        {/* Editorial Sub-Header & Status Strip */}
-        <div className="border-b border-neutral-200 dark:border-neutral-800 pb-8 sm:pb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <div className="font-mono text-[11px] text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-1">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-6 sm:px-10 lg:px-12 py-10 sm:py-16 space-y-16 sm:space-y-20 text-left">
+        {/* Editorial Sub-Header & Status Strip Container: Left-aligned stacked rows at top & bottom */}
+        <div className="border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 sm:px-5 pt-2 pb-2 min-h-[120px] flex flex-col justify-between items-start text-left">
+          {/* Top Edge Row */}
+          <div className="flex flex-col items-start space-y-0.5">
+            <div className="font-mono text-[10px] text-neutral-400 dark:text-neutral-500 uppercase tracking-widest leading-none">
               SYSTEM DASHBOARD // WORKSPACE SPECIFICATION
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-950 dark:text-neutral-50 font-sans">
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-950 dark:text-neutral-50 font-sans leading-tight">
               Software Engineering Operations
             </h1>
           </div>
 
-          <div className="font-mono text-xs text-neutral-500 dark:text-neutral-400 flex flex-wrap items-center gap-2">
+          {/* Open Vertical Space */}
+          <div className="flex-1 min-h-[28px]" />
+
+          {/* Bottom Edge Row */}
+          <div className="font-mono text-xs text-neutral-500 dark:text-neutral-400 flex flex-wrap items-center justify-start gap-2 leading-none">
             <span>STATUS: </span>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               NOMINAL
@@ -310,15 +327,17 @@ function DashboardContent() {
               onAddTask={handleAddTask}
               onDeleteTask={handleDeleteTask}
               onUpdateProjectDetails={handleUpdateProjectDetails}
+              onUpdateProject={handleUpdateProject}
+              onDeleteProject={handleDeleteProject}
             />
           </div>
         )}
       </main>
 
-      {/* Swiss Clean Footer */}
-      <footer className="border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 py-6 font-mono text-xs text-neutral-500 dark:text-neutral-400">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+      {/* Swiss Clean Footer: Left-aligned stacked rows at top & bottom */}
+      <footer className="border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 pt-2 pb-2 font-mono text-xs text-neutral-500 dark:text-neutral-400 text-left">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 min-h-[68px] flex flex-col items-start justify-between">
+          <div className="flex items-center justify-start gap-3 leading-none">
             <span className="font-bold text-neutral-900 dark:text-neutral-100 uppercase">
               Zoo
             </span>
@@ -326,7 +345,7 @@ function DashboardContent() {
             <span>SWISS MODERNIST PROJECT MANAGEMENT ARCHITECTURE</span>
           </div>
 
-          <div className="text-[11px] text-neutral-400 dark:text-neutral-500 tabular-nums">
+          <div className="text-[11px] text-neutral-400 dark:text-neutral-500 tabular-nums leading-none">
             7-ARC SPECTRAL VELOCITY ENGINE · ZERO PILLS · PURE SWISS ALIGNMENT
           </div>
         </div>

@@ -12,10 +12,7 @@ interface ProjectRegistryTableProps {
   onDeleteProject: (projectId: string) => void;
 }
 
-const STORAGE_PNG_KEY = 'zoo_registry_corner_png_v1';
-
-// Default sleek Swiss futuristic wireframe graphic (transparent geometric emblem for Zoo)
-const DEFAULT_SWISS_GRAPHIC = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" fill="none"><g stroke="%2371717A" stroke-width="1.2" opacity="0.32"><path d="M200 40 L340 120 L340 280 L200 360 L60 280 L60 120 Z"/><path d="M200 40 L200 360"/><path d="M60 120 L340 280"/><path d="M340 120 L60 280"/><circle cx="200" cy="200" r="110" stroke-dasharray="3 3"/><circle cx="200" cy="200" r="60"/><path d="M200 40 L280 20 L360 80 L340 120"/><path d="M60 120 L40 80 L120 20 L200 40"/><path d="M200 360 L280 440 L360 400 L340 280"/><path d="M60 280 L40 400 L120 440 L200 360"/><text x="200" y="470" font-family="monospace" font-size="11" fill="%2371717A" text-anchor="middle" letter-spacing="4">ZOO // GEOMETRIC CORE</text></g></svg>`;
+const STORAGE_PNG_KEY = 'zoo_registry_custom_png_v2';
 
 export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
   projects,
@@ -29,26 +26,24 @@ export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
   const totalUsers = projects.reduce((acc, p) => acc + p.activeUsers, 0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // PNG Image state (persisted in localStorage, default loaded)
+  // Blank by default (shows the low-opacity elephant cutout until user taps to upload a PNG)
   const [pngImage, setPngImage] = useState<string | null>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_PNG_KEY);
-      if (saved) return saved;
-      return DEFAULT_SWISS_GRAPHIC;
+      return localStorage.getItem(STORAGE_PNG_KEY) || null;
     } catch {
-      return DEFAULT_SWISS_GRAPHIC;
+      return null;
     }
   });
 
-  const [pngOpacity, setPngOpacity] = useState<number>(85);
-
   useEffect(() => {
-    if (pngImage) {
-      try {
+    try {
+      if (pngImage) {
         localStorage.setItem(STORAGE_PNG_KEY, pngImage);
-      } catch {
-        // quota exceeded or private mode
+      } else {
+        localStorage.removeItem(STORAGE_PNG_KEY);
       }
+    } catch {
+      // ignore storage quota errors
     }
   }, [pngImage]);
 
@@ -64,35 +59,9 @@ export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
     }
   };
 
-  const handleRemovePng = () => {
-    setPngImage(null);
-    localStorage.removeItem(STORAGE_PNG_KEY);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleResetDefault = () => {
-    setPngImage(DEFAULT_SWISS_GRAPHIC);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
   return (
-    <section className="relative overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
-      {/* 75% Height Bottom-Right PNG Area */}
-      <div
-        className="absolute right-0 bottom-0 h-[75%] max-w-[48%] pointer-events-none select-none z-0 flex items-end justify-end overflow-hidden pr-4 sm:pr-8 pb-0"
-        aria-hidden="true"
-      >
-        {pngImage && (
-          <img
-            src={pngImage}
-            alt="Container Brand Graphic"
-            className="h-full w-auto max-w-full object-contain object-right-bottom transition-none drop-shadow-sm"
-            style={{ opacity: pngOpacity / 100 }}
-          />
-        )}
-      </div>
-
-      {/* Hidden File Input for PNG Upload */}
+    <section className="relative overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 min-h-[480px] flex flex-col justify-between text-left">
+      {/* Hidden File Input activated by tapping the 75% height bottom-right corner space */}
       <input
         type="file"
         ref={fileInputRef}
@@ -101,194 +70,164 @@ export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
         className="hidden"
       />
 
-      {/* Section Header with Generous Open Space */}
-      <div className="relative z-10 px-6 sm:px-10 py-6 sm:py-8 border-b border-neutral-200 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-6 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-[2px]">
-        <div className="space-y-1.5">
-          <h2 className="font-mono text-base sm:text-lg font-bold tracking-tight text-neutral-950 dark:text-neutral-50 uppercase">
+      {/* Tappable 75% Height Bottom-Right Corner PNG Space */}
+      <div
+        onClick={() => fileInputRef.current?.click()}
+        title="Tap space to upload or change PNG image"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
+        className="absolute right-0 bottom-0 h-[75%] w-[48%] sm:w-[40%] z-20 cursor-pointer select-none flex items-end justify-end overflow-hidden focus:outline-none group"
+      >
+        {pngImage ? (
+          <img
+            src={pngImage}
+            alt="Uploaded corner PNG"
+            className="h-full w-auto max-w-full object-contain object-right-bottom transition-none"
+          />
+        ) : (
+          /* Low-opacity cutout of a side-view elephant with trunk facing upward, top 75% half anchored from right corner */
+          <svg
+            viewBox="0 0 420 340"
+            className="h-full w-auto object-contain object-right-bottom text-neutral-900 dark:text-neutral-100 opacity-[0.06] dark:opacity-[0.08] group-hover:opacity-[0.11] transition-none translate-x-[28%] translate-y-[12%]"
+            fill="currentColor"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-label="Elephant side view cutout with raised trunk"
+          >
+            {/* Side-view elephant silhouette facing left with trunk curving high upward; right half & top 75% anchored to bottom-right */}
+            <path d="M 88 28 C 78 28, 72 35, 73 45 C 75 68, 86 98, 104 118 C 115 130, 128 134, 138 128 C 122 142, 105 148, 88 144 C 82 142, 78 147, 83 152 C 102 162, 124 162, 144 150 C 148 168, 156 186, 170 202 L 166 340 L 218 340 L 222 252 C 254 258, 294 258, 330 250 L 334 340 L 392 340 L 408 220 C 416 172, 412 126, 382 96 C 348 64, 292 58, 244 72 C 230 52, 206 40, 180 42 C 158 44, 140 58, 130 78 C 114 72, 102 52, 98 34 C 96 29, 92 28, 88 28 Z" />
+            {/* Ear cutout detail for crisp architectural side-profile depth */}
+            <path
+              d="M 192 68 C 228 66, 254 96, 248 142 C 244 174, 218 194, 192 184 C 176 178, 168 152, 172 120 C 175 90, 180 70, 192 68 Z"
+              className="text-white dark:text-neutral-950"
+              fill="currentColor"
+              opacity="0.35"
+            />
+          </svg>
+        )}
+      </div>
+
+      {/* TOP EDGE OF CONTAINER: Stacked left-aligned header rows placed right at the top */}
+      <div className="relative z-10 w-full px-3 sm:px-5 pt-2 pb-6 border-b border-neutral-200 dark:border-neutral-800 flex flex-col items-start justify-start space-y-2">
+        <div className="flex flex-col items-start text-left space-y-0.5">
+          <h2 className="font-mono text-sm sm:text-base font-bold tracking-tight text-neutral-950 dark:text-neutral-50 uppercase leading-none">
             01. PROJECT REGISTRY // REPOSITORY INDEX
           </h2>
-          <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
-            CENTRAL INVENTORY · BUSINESS CLASSIFICATION · VERSION TELEMETRY · GLOBAL REACH
+          <p className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 leading-tight">
+            AGGREGATED REFERENCE INDEX FROM SECTION 02 · BUSINESS TYPE · START DATE · VERSION · USERS
           </p>
         </div>
 
-        {/* Section Actions & PNG Controls */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* PNG Area Trigger */}
-          <div className="flex items-center gap-1.5 border border-neutral-300 dark:border-neutral-700 px-2 py-1 font-mono text-xs text-neutral-700 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-900">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="hover:text-black dark:hover:text-white uppercase font-semibold text-[11px]"
-              title="Add or replace the PNG graphic in the bottom right corner"
-            >
-              {pngImage ? 'REPLACE PNG' : '+ ADD PNG'}
-            </button>
-            {pngImage && (
-              <>
-                <span className="text-neutral-300 dark:text-neutral-700">·</span>
-                <button
-                  onClick={handleRemovePng}
-                  className="hover:text-red-500 text-neutral-400 uppercase text-[10px]"
-                  title="Remove PNG graphic"
-                >
-                  REMOVE
-                </button>
-                <span className="text-neutral-300 dark:text-neutral-700">·</span>
-                <button
-                  onClick={handleResetDefault}
-                  className="hover:text-neutral-900 dark:hover:text-neutral-100 text-neutral-400 uppercase text-[10px]"
-                  title="Reset to default Swiss wireframe"
-                >
-                  RESET
-                </button>
-              </>
-            )}
-          </div>
-
+        {/* Stacked Row of Actions (Left-Aligned, No PNG Buttons) */}
+        <div className="flex flex-wrap items-center justify-start gap-2 pt-1">
           <button
             onClick={onOpenLogModal}
-            className="px-3.5 py-1.5 font-mono text-xs border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-900 text-neutral-800 dark:text-neutral-200 uppercase tracking-wide transition-none"
-            title="Inspect chronological deployment and change log records"
+            className="px-2.5 py-1 font-mono text-[11px] border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-900 text-neutral-800 dark:text-neutral-200 uppercase tracking-wide transition-none"
           >
             VIEW AUDIT LOG MODAL
           </button>
 
           <button
             onClick={() => exportProjectsAuditPDF(projects, logs)}
-            className="px-3.5 py-1.5 font-mono text-xs border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-900 text-neutral-800 dark:text-neutral-200 uppercase tracking-wide transition-none"
-            title="Export official PDF compliance document"
+            className="px-2.5 py-1 font-mono text-[11px] border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-900 text-neutral-800 dark:text-neutral-200 uppercase tracking-wide transition-none"
           >
             DOWNLOAD PDF
           </button>
 
           <button
             onClick={onOpenNewProject}
-            className="px-4 py-1.5 font-mono text-xs bg-neutral-900 hover:bg-black text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-black font-semibold uppercase tracking-wider transition-none sm:hidden"
+            className="px-2.5 py-1 font-mono text-[11px] bg-neutral-900 hover:bg-black text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-black font-semibold uppercase tracking-wider transition-none sm:hidden"
           >
-            + ADD
+            + ADD PROJECT
           </button>
+        </div>
+
+        {/* Left-Aligned Stacked Project Reference Rows (Aggregated from Section 02) */}
+        <div className="w-full pt-4 overflow-x-auto">
+          <table className="w-full text-left font-mono text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] uppercase text-neutral-500 dark:text-neutral-400 tracking-wider">
+                <th className="pt-1 pb-1.5 pr-4 font-semibold text-left align-top">PROJECT NAME</th>
+                <th className="pt-1 pb-1.5 px-4 font-semibold text-left align-top">BUSINESS TYPE</th>
+                <th className="pt-1 pb-1.5 px-4 font-semibold text-left align-top whitespace-nowrap">START DATE</th>
+                <th className="pt-1 pb-1.5 px-4 font-semibold text-left align-top whitespace-nowrap">VERSION</th>
+                <th className="pt-1 pb-1.5 pl-4 font-semibold text-left align-top whitespace-nowrap">ACTIVE USERS</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-200/60 dark:divide-neutral-800/60">
+              {projects.map((proj) => (
+                <tr
+                  key={proj.id}
+                  onClick={() => onSelectProject(proj.id)}
+                  className="hover:bg-neutral-50/70 dark:hover:bg-neutral-900/40 transition-none cursor-pointer group"
+                  title="Jump to project in Section 02 to inspect or edit"
+                >
+                  {/* Project Name */}
+                  <td className="pt-1.5 pb-4 pr-4 align-top text-left">
+                    <div className="flex flex-col items-start justify-between space-y-1">
+                      <span className="text-left font-semibold text-neutral-950 dark:text-neutral-50 group-hover:underline text-xs sm:text-sm leading-none">
+                        {proj.name}
+                      </span>
+                      <span className="text-[10px] text-neutral-400 dark:text-neutral-500 truncate max-w-xs leading-none">
+                        {proj.details.liveSite.replace(/^https?:\/\//, '')}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Business Type */}
+                  <td className="pt-1.5 pb-4 px-4 align-top text-left text-neutral-700 dark:text-neutral-300 whitespace-nowrap text-xs leading-none">
+                    {proj.businessType}
+                  </td>
+
+                  {/* Start Date */}
+                  <td className="pt-1.5 pb-4 px-4 align-top text-left text-neutral-600 dark:text-neutral-400 tabular-nums whitespace-nowrap text-xs leading-none">
+                    {proj.startDate}
+                  </td>
+
+                  {/* Version Number */}
+                  <td className="pt-1.5 pb-4 px-4 align-top text-left whitespace-nowrap leading-none">
+                    <span className="font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums text-xs">
+                      {proj.version}
+                    </span>
+                  </td>
+
+                  {/* Active Users */}
+                  <td className="pt-1.5 pb-4 pl-4 align-top text-left font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums whitespace-nowrap text-xs leading-none">
+                    {proj.activeUsers.toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Registry Table with Generous Row Heights & Open Space */}
-      <div className="relative z-10 overflow-x-auto">
-        <table className="w-full text-left font-mono text-xs">
-          <thead>
-            <tr className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/30 text-[11px] uppercase text-neutral-500 dark:text-neutral-400 tracking-wider">
-              <th className="py-4 px-6 sm:px-10 font-semibold">PROJECT NAME</th>
-              <th className="py-4 px-6 font-semibold">BUSINESS TYPE</th>
-              <th className="py-4 px-6 font-semibold whitespace-nowrap">START DATE</th>
-              <th className="py-4 px-6 font-semibold whitespace-nowrap">VERSION</th>
-              <th className="py-4 px-6 text-right font-semibold whitespace-nowrap">ACTIVE USERS</th>
-              <th className="py-4 px-6 sm:px-10 text-right font-semibold">OPERATIONS</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-200/60 dark:divide-neutral-800/60">
-            {projects.map((proj) => (
-              <tr
-                key={proj.id}
-                className="hover:bg-neutral-50/70 dark:hover:bg-neutral-900/40 transition-none group"
-              >
-                {/* Project Name */}
-                <td className="py-5 sm:py-6 px-6 sm:px-10">
-                  <div className="flex flex-col space-y-1">
-                    <button
-                      onClick={() => onSelectProject(proj.id)}
-                      className="text-left font-semibold text-neutral-950 dark:text-neutral-50 hover:underline text-sm sm:text-base"
-                    >
-                      {proj.name}
-                    </button>
-                    <span className="text-[11px] text-neutral-400 dark:text-neutral-500 truncate max-w-sm">
-                      {proj.details.liveSite.replace(/^https?:\/\//, '')}
-                    </span>
-                  </div>
-                </td>
+      {/* Open Swiss Vertical Space in Middle of Container */}
+      <div className="flex-1 min-h-[90px]" />
 
-                {/* Business Type */}
-                <td className="py-5 sm:py-6 px-6 text-neutral-700 dark:text-neutral-300 whitespace-nowrap text-xs sm:text-sm">
-                  {proj.businessType}
-                </td>
-
-                {/* Start Date */}
-                <td className="py-5 sm:py-6 px-6 text-neutral-600 dark:text-neutral-400 tabular-nums whitespace-nowrap text-xs sm:text-sm">
-                  {proj.startDate}
-                </td>
-
-                {/* Version Number with bump triggers */}
-                <td className="py-5 sm:py-6 px-6 whitespace-nowrap">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums text-xs sm:text-sm">
-                      {proj.version}
-                    </span>
-                    <div className="opacity-0 group-hover:opacity-100 transition-none flex items-center gap-1 text-[11px]">
-                      <button
-                        onClick={() => onBumpVersion(proj.id, 'patch')}
-                        className="text-neutral-400 hover:text-black dark:hover:text-white underline"
-                        title="Bump patch version (+0.0.1)"
-                      >
-                        +patch
-                      </button>
-                      <span className="text-neutral-300 dark:text-neutral-700">·</span>
-                      <button
-                        onClick={() => onBumpVersion(proj.id, 'minor')}
-                        className="text-neutral-400 hover:text-black dark:hover:text-white underline"
-                        title="Bump minor version (+0.1.0)"
-                      >
-                        +minor
-                      </button>
-                    </div>
-                  </div>
-                </td>
-
-                {/* Number of Users */}
-                <td className="py-5 sm:py-6 px-6 text-right font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums whitespace-nowrap text-xs sm:text-sm">
-                  {proj.activeUsers.toLocaleString()}
-                </td>
-
-                {/* Actions */}
-                <td className="py-5 sm:py-6 px-6 sm:px-10 text-right whitespace-nowrap">
-                  <div className="flex items-center justify-end gap-3 text-neutral-500 dark:text-neutral-400 text-xs sm:text-sm">
-                    <button
-                      onClick={() => onSelectProject(proj.id)}
-                      className="text-neutral-900 dark:text-neutral-100 hover:underline uppercase text-xs font-semibold"
-                    >
-                      SPRINT TASKS →
-                    </button>
-                    <span className="text-neutral-300 dark:text-neutral-700">/</span>
-                    <button
-                      onClick={() => onDeleteProject(proj.id)}
-                      className="text-neutral-400 hover:text-red-600 dark:hover:text-red-400 uppercase text-xs"
-                      title="Decommission project from registry"
-                    >
-                      DEL
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Registry Footer Telemetry with Open Space */}
-      <div className="relative z-10 px-6 sm:px-10 py-5 sm:py-6 border-t border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-[2px] flex flex-wrap items-center justify-between gap-6 font-mono text-xs text-neutral-500 dark:text-neutral-400">
-        <div className="flex flex-wrap items-center gap-3">
-          <span>TOTAL MONITORED SYSTEMS: </span>
+      {/* BOTTOM EDGE OF CONTAINER: Left-aligned stacked rows placed right at the bottom */}
+      <div className="relative z-10 w-full px-3 sm:px-5 pt-4 pb-1.5 border-t border-neutral-200 dark:border-neutral-800 flex flex-col items-start justify-end space-y-1 font-mono text-[11px] text-neutral-500 dark:text-neutral-400 text-left">
+        <div className="flex flex-wrap items-center justify-start gap-2 leading-none">
+          <span>AGGREGATED FROM SECTION 02</span>
+          <span className="text-neutral-300 dark:text-neutral-700">·</span>
+          <span>TOTAL MONITORED SYSTEMS:</span>
           <span className="font-semibold text-neutral-800 dark:text-neutral-200 tabular-nums">
             {projects.length}
           </span>
           <span className="text-neutral-300 dark:text-neutral-700">·</span>
-          <span>AGGREGATE ACTIVE USERS: </span>
+          <span>AGGREGATE ACTIVE USERS:</span>
           <span className="font-semibold text-neutral-800 dark:text-neutral-200 tabular-nums">
             {totalUsers.toLocaleString()}
           </span>
         </div>
 
-        <div className="text-[11px] tracking-wider uppercase text-neutral-400 flex items-center gap-3">
-          {pngImage && (
-            <span>PNG ACTIVE: 75% HEIGHT CORNER ANCHOR · </span>
-          )}
-          <span>AUDITABLE PDF & MODAL PERSISTED</span>
+        <div className="text-[10px] tracking-wider uppercase text-neutral-400 leading-none">
+          LOG RETENTION: AUDITABLE PDF & MODAL PERSISTED · TAP RIGHT CORNER FOR PNG
         </div>
       </div>
     </section>
