@@ -40,21 +40,21 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-4">
+      <div className="w-full max-w-md bg-[#EFECE6] dark:bg-[#141417] text-[#181715] dark:text-[#F3F1EC] shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40">
+        <div className="flex items-center justify-between px-6 py-4 bg-[#E5E0D6]/70 dark:bg-[#1E1E24]/70">
           <div>
-            <h2 className="font-mono text-sm font-bold tracking-tight text-neutral-900 dark:text-neutral-100 uppercase">
-              {mode === 'signin' ? 'OPERATOR SIGN IN' : 'REGISTER NEW OPERATOR'}
+            <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-[#181715] dark:text-[#F3F1EC]">
+              {mode === 'signin' ? 'Operator Sign In' : 'Register New Operator'}
             </h2>
-            <p className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-              Zoo // AUTHENTICATION PROTOCOL
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#8C867E] dark:text-[#6E6A63] mt-0.5">
+              Zoo · STUDIO SESSION
             </p>
           </div>
           <button
             onClick={closeAuthModal}
-            className="font-mono text-sm px-2 py-1 text-neutral-500 hover:text-black dark:hover:text-white"
+            className="font-mono text-sm px-2 py-1 text-[#5C5852] dark:text-[#A6A29A] hover:text-[#181715] dark:hover:text-[#F3F1EC]"
           >
             ✕
           </button>
@@ -63,13 +63,13 @@ export const AuthModal: React.FC = () => {
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 font-mono text-xs space-y-4">
           {errorMessage && (
-            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 font-mono text-[11px]">
+            <div className="p-3 bg-[#D94E28]/10 text-[#D94E28] dark:text-[#E85D36] font-mono text-[11px]">
               ERROR: {errorMessage}
             </div>
           )}
 
           <div>
-            <label className="block text-[11px] uppercase text-neutral-600 dark:text-neutral-400 mb-1">
+            <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">
               Username
             </label>
             <input
@@ -79,15 +79,15 @@ export const AuthModal: React.FC = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="e.g. alex.dev"
-              className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-black dark:focus:border-white"
+              className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
             />
-            <span className="block text-[10px] text-neutral-400 mt-1">
+            <span className="block text-[10px] text-[#8C867E] dark:text-[#6E6A63] mt-1">
               Single-word identifier or handle. No email needed.
             </span>
           </div>
 
           <div>
-            <label className="block text-[11px] uppercase text-neutral-600 dark:text-neutral-400 mb-1">
+            <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">
               Password
             </label>
             <input
@@ -96,21 +96,21 @@ export const AuthModal: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
-              className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-black dark:focus:border-white"
+              className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-neutral-900 hover:bg-black text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-black font-semibold uppercase tracking-wider text-xs"
+            className="w-full py-2.5 bg-[#D94E28] hover:bg-[#C2411E] dark:bg-[#E85D36] dark:hover:bg-[#D94E28] text-white font-semibold uppercase tracking-wider text-xs transition-colors"
           >
-            {mode === 'signin' ? 'ENTER DASHBOARD' : 'CREATE ACCOUNT & SIGN IN'}
+            {mode === 'signin' ? 'Enter Studio' : 'Create Account & Sign In'}
           </button>
 
           {/* Mode Switch */}
-          <div className="pt-2 text-center border-t border-neutral-100 dark:border-neutral-900">
+          <div className="pt-2 text-center border-t border-[#181715]/[0.07] dark:border-white/[0.06]">
             {mode === 'signin' ? (
-              <p className="text-neutral-500 text-[11px]">
+              <p className="text-[#5C5852] dark:text-[#A6A29A] text-[11px]">
                 No account registered yet?{' '}
                 <button
                   type="button"
@@ -118,13 +118,13 @@ export const AuthModal: React.FC = () => {
                     setErrorMessage(null);
                     setMode('signup');
                   }}
-                  className="text-neutral-900 dark:text-neutral-100 underline underline-offset-2 hover:font-bold"
+                  className="text-[#D94E28] dark:text-[#E85D36] underline underline-offset-2 font-semibold"
                 >
                   Create new username
                 </button>
               </p>
             ) : (
-              <p className="text-neutral-500 text-[11px]">
+              <p className="text-[#5C5852] dark:text-[#A6A29A] text-[11px]">
                 Already have an operator account?{' '}
                 <button
                   type="button"
@@ -132,7 +132,7 @@ export const AuthModal: React.FC = () => {
                     setErrorMessage(null);
                     setMode('signin');
                   }}
-                  className="text-neutral-900 dark:text-neutral-100 underline underline-offset-2 hover:font-bold"
+                  className="text-[#D94E28] dark:text-[#E85D36] underline underline-offset-2 font-semibold"
                 >
                   Sign in here
                 </button>
@@ -141,13 +141,13 @@ export const AuthModal: React.FC = () => {
           </div>
 
           {/* Quick preset switch */}
-          <div className="pt-3 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-[10px] text-neutral-400">
+          <div className="pt-3 border-t border-[#181715]/[0.07] dark:border-white/[0.06] flex items-center justify-between text-[10px] text-[#8C867E] dark:text-[#6E6A63]">
             <span>QUICK PRESETS:</span>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => handleQuickDemo('alex.dev', 'password123')}
-                className="underline hover:text-neutral-800 dark:hover:text-neutral-200"
+                className="underline hover:text-[#181715] dark:hover:text-[#F3F1EC]"
               >
                 alex.dev
               </button>
@@ -155,7 +155,7 @@ export const AuthModal: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleQuickDemo('lead_architect', 'kern2026')}
-                className="underline hover:text-neutral-800 dark:hover:text-neutral-200"
+                className="underline hover:text-[#181715] dark:hover:text-[#F3F1EC]"
               >
                 lead_architect
               </button>

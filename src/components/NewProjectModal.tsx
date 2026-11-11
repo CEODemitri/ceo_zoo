@@ -57,20 +57,20 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-2xl bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 shadow-2xl flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-4">
+      <div className="w-full max-w-2xl bg-[#EFECE6] dark:bg-[#141417] text-[#181715] dark:text-[#F3F1EC] shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 bg-[#E5E0D6]/70 dark:bg-[#1E1E24]/70">
           <div>
-            <h2 className="font-mono text-sm font-bold tracking-tight text-neutral-900 dark:text-neutral-100 uppercase">
-              REGISTER NEW SOFTWARE PROJECT
+            <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-[#181715] dark:text-[#F3F1EC]">
+              Register New Software Project
             </h2>
-            <p className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#8C867E] dark:text-[#6E6A63]">
               INITIALIZE REPOSITORY TELEMETRY AND SPRINT TRACKING
             </p>
           </div>
           <button
             onClick={onClose}
-            className="font-mono text-sm px-2 py-1 text-neutral-500 hover:text-black dark:hover:text-white"
+            className="font-mono text-sm px-2 py-1 text-[#5C5852] dark:text-[#A6A29A] hover:text-[#181715] dark:hover:text-[#F3F1EC]"
           >
             ✕
           </button>
@@ -79,7 +79,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 font-mono text-xs">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] uppercase text-neutral-500 dark:text-neutral-400 mb-1">
+              <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">
                 Project Name *
               </label>
               <input
@@ -88,12 +88,12 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Nexus Query Engine"
-                className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-black dark:focus:border-white"
+                className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] uppercase text-neutral-500 dark:text-neutral-400 mb-1">
+              <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">
                 Business Type / Industry
               </label>
               <input
@@ -101,24 +101,24 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
                 value={businessType}
                 onChange={(e) => setBusinessType(e.target.value)}
                 placeholder="e.g. Fintech B2B, DevTools"
-                className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-black dark:focus:border-white"
+                className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] uppercase text-neutral-500 dark:text-neutral-400 mb-1">
+              <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">
                 Start Date
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-black dark:focus:border-white"
+                className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] uppercase text-neutral-500 dark:text-neutral-400 mb-1">
+              <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">
                 Initial Version (SemVer)
               </label>
               <input
@@ -126,12 +126,12 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
                 value={version}
                 onChange={(e) => setVersion(e.target.value)}
                 placeholder="v1.0.0"
-                className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-black dark:focus:border-white"
+                className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] uppercase text-neutral-500 dark:text-neutral-400 mb-1">
+              <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">
                 Active Users / Installs
               </label>
               <input
@@ -139,97 +139,97 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
                 min="0"
                 value={activeUsers}
                 onChange={(e) => setActiveUsers(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-black dark:focus:border-white tabular-nums"
+                className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36] tabular-nums"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] uppercase text-neutral-500 dark:text-neutral-400 mb-1">
+              <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">
                 Sprint Title
               </label>
               <input
                 type="text"
                 value={sprintName}
                 onChange={(e) => setSprintName(e.target.value)}
-                placeholder="Sprint 01 // Foundation"
-                className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-black dark:focus:border-white"
+                placeholder="Sprint 01 · Foundation"
+                className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
               />
             </div>
           </div>
 
-          <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800">
-            <span className="block font-mono text-[11px] uppercase text-neutral-500 dark:text-neutral-400 mb-2">
+          <div className="pt-3 border-t border-[#181715]/[0.07] dark:border-white/[0.06]">
+            <span className="block font-mono text-[10px] uppercase tracking-[0.12em] text-[#8C867E] dark:text-[#6E6A63] mb-2">
               HOSTING & CREDENTIAL SPECIFICATIONS
             </span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] uppercase text-neutral-400 mb-1">Live Site URL</label>
+                <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">Live Site URL</label>
                 <input
                   type="text"
                   value={liveSite}
                   onChange={(e) => setLiveSite(e.target.value)}
                   placeholder="https://app.example.com"
-                  className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                  className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase text-neutral-400 mb-1">Hosted Platform</label>
+                <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">Hosted Platform</label>
                 <input
                   type="text"
                   value={hostedCompany}
                   onChange={(e) => setHostedCompany(e.target.value)}
                   placeholder="e.g. AWS, Vercel, Supabase"
-                  className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                  className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase text-neutral-400 mb-1">Admin Username</label>
+                <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">Admin Username</label>
                 <input
                   type="text"
                   value={adminName}
                   onChange={(e) => setAdminName(e.target.value)}
                   placeholder="admin"
-                  className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                  className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase text-neutral-400 mb-1">Admin Password</label>
+                <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">Admin Password</label>
                 <input
                   type="text"
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
                   placeholder="Secret access key"
-                  className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                  className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-[10px] uppercase text-neutral-400 mb-1">Notes / Objectives</label>
+            <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">Notes / Objectives</label>
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Infrastructure notes, deployment instructions, architecture specs..."
-              className="w-full px-3 py-2 bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none"
+              className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#181715]/[0.07] dark:border-white/[0.06]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 uppercase"
+              className="px-4 py-2 bg-[#E5E0D6] hover:bg-[#DBD5C9] dark:bg-[#1E1E24] dark:hover:bg-[#282830] text-[#5C5852] dark:text-[#A6A29A] uppercase transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-neutral-900 hover:bg-black text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-black font-semibold uppercase"
+              className="px-5 py-2 bg-[#D94E28] hover:bg-[#C2411E] dark:bg-[#E85D36] dark:hover:bg-[#D94E28] text-white font-semibold uppercase transition-colors"
             >
               Register Project
             </button>

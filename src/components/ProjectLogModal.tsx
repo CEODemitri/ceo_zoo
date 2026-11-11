@@ -27,29 +27,29 @@ export const ProjectLogModal: React.FC<ProjectLogModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-none p-4">
-      <div className="w-full max-w-4xl bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-4">
+      <div className="w-full max-w-4xl bg-[#EFECE6] dark:bg-[#141417] text-[#181715] dark:text-[#F3F1EC] shadow-2xl flex flex-col max-h-[90vh]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/50">
+        <div className="flex items-center justify-between px-6 py-4 bg-[#E5E0D6]/70 dark:bg-[#1E1E24]/70">
           <div>
-            <h2 className="font-mono text-sm font-bold tracking-tight text-neutral-900 dark:text-neutral-100 uppercase">
-              PROJECT REGISTRY // SYSTEM AUDIT LOG
+            <h2 className="font-serif text-base sm:text-lg font-semibold tracking-tight text-[#181715] dark:text-[#F3F1EC]">
+              System Audit Log
             </h2>
-            <p className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-              VERIFIED CHRONOLOGICAL TELEMETRY & SYSTEM STATE RECORDS
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#8C867E] dark:text-[#6E6A63] mt-0.5">
+              CHRONOLOGICAL TELEMETRY & STATE RECORDS
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => exportProjectsAuditPDF(projects, logs)}
-              className="px-3 py-1.5 font-mono text-xs border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 uppercase tracking-wider"
+              className="px-3 py-1.5 font-mono text-xs bg-[#D94E28] hover:bg-[#C2411E] dark:bg-[#E85D36] dark:hover:bg-[#D94E28] text-white font-semibold uppercase tracking-wider transition-colors"
             >
-              DOWNLOAD PDF
+              Download PDF
             </button>
             <button
               onClick={onClose}
-              className="font-mono text-sm px-2.5 py-1 text-neutral-500 hover:text-black dark:hover:text-white"
+              className="font-mono text-sm px-2.5 py-1 text-[#5C5852] dark:text-[#A6A29A] hover:text-[#181715] dark:hover:text-[#F3F1EC]"
               aria-label="Close modal"
             >
               ✕
@@ -57,48 +57,48 @@ export const ProjectLogModal: React.FC<ProjectLogModalProps> = ({
           </div>
         </div>
 
-        {/* Top Summary Metric Row (Zero Pills, Pure Swiss Monospace Math) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/20 divide-x divide-neutral-200 dark:divide-neutral-800">
+        {/* Top Summary Metric Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 bg-[#F6F4EF]/60 dark:bg-[#0C0C0E]/50 divide-x divide-[#181715]/[0.07] dark:divide-white/[0.06]">
           <div className="p-4">
-            <span className="block font-mono text-[10px] uppercase text-neutral-400 tracking-wider">
+            <span className="block font-mono text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] tracking-wider">
               TOTAL PROJECTS
             </span>
-            <span className="font-mono text-xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+            <span className="font-mono text-xl font-bold tabular-nums text-[#181715] dark:text-[#F3F1EC]">
               {projects.length}
             </span>
           </div>
 
           <div className="p-4">
-            <span className="block font-mono text-[10px] uppercase text-neutral-400 tracking-wider">
+            <span className="block font-mono text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] tracking-wider">
               TOTAL ACTIVE USERS
             </span>
-            <span className="font-mono text-xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+            <span className="font-mono text-xl font-bold tabular-nums text-[#181715] dark:text-[#F3F1EC]">
               {totalUsers.toLocaleString()}
             </span>
           </div>
 
           <div className="p-4">
-            <span className="block font-mono text-[10px] uppercase text-neutral-400 tracking-wider">
+            <span className="block font-mono text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] tracking-wider">
               LOG ENTRIES RECORDED
             </span>
-            <span className="font-mono text-xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+            <span className="font-mono text-xl font-bold tabular-nums text-[#181715] dark:text-[#F3F1EC]">
               {logs.length}
             </span>
           </div>
 
           <div className="p-4">
-            <span className="block font-mono text-[10px] uppercase text-neutral-400 tracking-wider">
+            <span className="block font-mono text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] tracking-wider">
               AUDIT COMPLIANCE
             </span>
-            <span className="font-mono text-sm font-semibold text-emerald-600 dark:text-emerald-400 pt-1 block">
+            <span className="font-mono text-sm font-semibold text-[#181715] dark:text-[#F3F1EC] pt-1 block">
               SOC-2 VERIFIED
             </span>
           </div>
         </div>
 
         {/* Filter Bar */}
-        <div className="px-4 sm:px-6 py-2.5 border-b border-neutral-200 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <span className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+        <div className="px-4 sm:px-6 py-2.5 border-b border-[#181715]/[0.07] dark:border-white/[0.06] flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span className="font-mono text-[11px] text-[#5C5852] dark:text-[#A6A29A] uppercase tracking-wider">
             FILTER BY ACTION TYPE:
           </span>
 
@@ -107,10 +107,10 @@ export const ProjectLogModal: React.FC<ProjectLogModalProps> = ({
               <button
                 key={act}
                 onClick={() => setFilterAction(act)}
-                className={`font-mono text-[10px] px-2 py-1 uppercase tracking-tight border transition-none ${
+                className={`font-mono text-[10px] px-2.5 py-1 uppercase tracking-tight transition-colors ${
                   filterAction === act
-                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-black border-neutral-900 dark:border-white font-semibold'
-                    : 'text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:border-neutral-400'
+                    ? 'bg-[#D94E28] dark:bg-[#E85D36] text-white font-semibold'
+                    : 'bg-[#E5E0D6] hover:bg-[#DBD5C9] dark:bg-[#1E1E24] dark:hover:bg-[#282830] text-[#5C5852] dark:text-[#A6A29A]'
                 }`}
               >
                 {act.replace('_', ' ')}
@@ -122,21 +122,21 @@ export const ProjectLogModal: React.FC<ProjectLogModalProps> = ({
         {/* Scrollable Logs Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {/* Mobile Stacked Log List (< 640px) — Zero Horizontal Scroll */}
-          <div className="sm:hidden divide-y divide-neutral-100 dark:divide-neutral-900 font-mono text-xs text-left">
+          <div className="sm:hidden divide-y divide-[#181715]/[0.06] dark:divide-white/[0.05] font-mono text-xs text-left">
             {filteredLogs.map((log) => (
               <div key={log.id} className="py-2.5 flex flex-col items-start space-y-1">
                 <div className="w-full flex flex-wrap items-center justify-between gap-2 text-[10px]">
-                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  <span className="font-semibold text-[#D94E28] dark:text-[#E85D36]">
                     {log.action}
                   </span>
-                  <span className="text-neutral-500 dark:text-neutral-400 tabular-nums">
+                  <span className="text-[#8C867E] dark:text-[#6E6A63] tabular-nums">
                     {log.timestamp.replace('T', ' ').substring(0, 16)} UTC
                   </span>
                 </div>
-                <div className="text-[11px] text-neutral-700 dark:text-neutral-300">
-                  {log.projectName} · <span className="text-neutral-400">@{log.author}</span>
+                <div className="text-[11px] text-[#5C5852] dark:text-[#A6A29A]">
+                  {log.projectName} · <span className="text-[#8C867E]">@{log.author}</span>
                 </div>
-                <p className="text-[11px] text-neutral-800 dark:text-neutral-200 break-words leading-snug">
+                <p className="text-[11px] text-[#181715] dark:text-[#F3F1EC] break-words leading-snug">
                   {log.summary}
                 </p>
               </div>
@@ -146,7 +146,7 @@ export const ProjectLogModal: React.FC<ProjectLogModalProps> = ({
           {/* Desktop Table (>= 640px) */}
           <table className="hidden sm:table w-full text-left font-mono text-xs">
             <thead>
-              <tr className="border-b border-neutral-300 dark:border-neutral-700 text-[10px] uppercase text-neutral-400 tracking-wider">
+              <tr className="border-b border-[#181715]/[0.1] dark:border-white/[0.08] text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] tracking-wider">
                 <th className="pb-2 font-medium">TIMESTAMP (UTC)</th>
                 <th className="pb-2 font-medium">ACTION</th>
                 <th className="pb-2 font-medium">PROJECT</th>
@@ -154,24 +154,24 @@ export const ProjectLogModal: React.FC<ProjectLogModalProps> = ({
                 <th className="pb-2 font-medium">SUMMARY</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-900">
+            <tbody className="divide-y divide-[#181715]/[0.06] dark:divide-white/[0.05]">
               {filteredLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-900/50">
-                  <td className="py-2.5 pr-4 text-neutral-500 dark:text-neutral-400 text-[11px] tabular-nums whitespace-nowrap">
+                <tr key={log.id} className="hover:bg-[#E5E0D6]/50 dark:hover:bg-[#1E1E24]/60">
+                  <td className="py-2.5 pr-4 text-[#5C5852] dark:text-[#A6A29A] text-[11px] tabular-nums whitespace-nowrap">
                     {log.timestamp.replace('T', ' ').substring(0, 16)}
                   </td>
                   <td className="py-2.5 pr-4 whitespace-nowrap">
-                    <span className="text-neutral-900 dark:text-neutral-100 font-semibold text-[11px]">
+                    <span className="text-[#D94E28] dark:text-[#E85D36] font-semibold text-[11px]">
                       {log.action}
                     </span>
                   </td>
-                  <td className="py-2.5 pr-4 text-neutral-700 dark:text-neutral-300 text-[11px] whitespace-nowrap">
+                  <td className="py-2.5 pr-4 text-[#181715] dark:text-[#F3F1EC] text-[11px] whitespace-nowrap">
                     {log.projectName}
                   </td>
-                  <td className="py-2.5 pr-4 text-neutral-500 dark:text-neutral-400 text-[11px] whitespace-nowrap">
+                  <td className="py-2.5 pr-4 text-[#5C5852] dark:text-[#A6A29A] text-[11px] whitespace-nowrap">
                     {log.author}
                   </td>
-                  <td className="py-2.5 text-neutral-800 dark:text-neutral-200 text-[11px]">
+                  <td className="py-2.5 text-[#181715] dark:text-[#F3F1EC] text-[11px]">
                     {log.summary}
                   </td>
                 </tr>
@@ -181,16 +181,16 @@ export const ProjectLogModal: React.FC<ProjectLogModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-4 sm:px-6 py-3 border-t border-neutral-200 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-2 bg-neutral-50 dark:bg-neutral-900/40">
-          <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest">
-            LOG INTEGRITY HASH: SHA-256 // VERIFIED
+        <div className="px-4 sm:px-6 py-3 bg-[#E5E0D6]/60 dark:bg-[#1E1E24]/60 flex flex-wrap items-center justify-between gap-2">
+          <span className="font-mono text-[10px] text-[#8C867E] dark:text-[#6E6A63] uppercase tracking-[0.12em]">
+            LOG INTEGRITY HASH: SHA-256 · VERIFIED
           </span>
 
           <button
             onClick={onClose}
-            className="px-5 py-1.5 font-mono text-xs bg-neutral-900 hover:bg-black text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-black font-semibold uppercase"
+            className="px-5 py-1.5 font-mono text-xs bg-[#181715] hover:bg-black text-[#F3F1EC] dark:bg-[#F3F1EC] dark:hover:bg-white dark:text-[#181715] font-semibold uppercase"
           >
-            DISMISS
+            Dismiss
           </button>
         </div>
       </div>

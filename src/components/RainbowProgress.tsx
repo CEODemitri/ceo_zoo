@@ -73,20 +73,20 @@ export const RainbowProgress: React.FC<RainbowProgressProps> = ({
               d={pathData}
               fill="none"
               stroke={isLit ? bow.color : 'currentColor'}
-              className={isLit ? '' : 'text-neutral-200 dark:text-neutral-800'}
+              className={isLit ? '' : 'text-[#CFC9BE] dark:text-[#2A2A32]'}
               strokeWidth={dimensions.strokeWidth}
               strokeLinecap="round"
-              opacity={isLit ? 1 : 0.45}
+              opacity={isLit ? 1 : 0.75}
             />
           );
         })}
       </svg>
 
       {showLabel && (
-        <div className={`font-mono tabular-nums leading-none ${dimensions.fontSize} text-neutral-800 dark:text-neutral-200`}>
+        <div className={`font-mono tabular-nums leading-none ${dimensions.fontSize} text-[#181715] dark:text-[#F3F1EC]`}>
           <span className="font-semibold">{percentage}%</span>
-          <span className="text-neutral-400 dark:text-neutral-500 mx-1.5">/</span>
-          <span className="text-neutral-500 dark:text-neutral-400 text-[11px] tracking-tight">
+          <span className="text-[#8C867E] dark:text-[#6E6A63] mx-1.5">/</span>
+          <span className="text-[#5C5852] dark:text-[#A6A29A] text-[11px] tracking-tight">
             {litCount}/7 BOWS LIT
           </span>
         </div>

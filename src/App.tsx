@@ -262,8 +262,8 @@ function DashboardContent() {
   };
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-[#FBFBFC] dark:bg-[#0B0C0E] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-none">
-      {/* Top Bar (3-zone contract, no title icons) */}
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#F6F4EF] dark:bg-[#0C0C0E] text-[#181715] dark:text-[#F3F1EC] flex flex-col font-sans transition-colors duration-150">
+      {/* Top Bar */}
       <TopBar
         onOpenAuditLog={() => setIsLogModalOpen(true)}
         onOpenNewProject={() => setIsNewProjectModalOpen(true)}
@@ -271,16 +271,16 @@ function DashboardContent() {
         onSelectSection={setActiveSection}
       />
 
-      {/* Main Dashboard Canvas (Big open Swiss space, high-precision typography) */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-8 lg:px-12 py-6 sm:py-16 space-y-10 sm:space-y-20 text-left">
-        {/* Editorial Sub-Header & Status Strip Container: Left-aligned stacked rows at top & bottom */}
-        <div className="border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 sm:px-5 pt-2 pb-2 min-h-[100px] sm:min-h-[120px] flex flex-col justify-between items-start text-left">
+      {/* Main Dashboard Canvas */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-8 lg:px-12 py-6 sm:py-14 space-y-10 sm:space-y-16 text-left">
+        {/* Editorial Sub-Header & Status Strip Container: Borderless tonal card, left-aligned stacked rows at top & bottom */}
+        <div className="bg-[#EFECE6] dark:bg-[#141417] px-4 sm:px-6 pt-3 pb-3 min-h-[108px] sm:min-h-[124px] flex flex-col justify-between items-start text-left">
           {/* Top Edge Row */}
-          <div className="flex flex-col items-start space-y-0.5">
-            <div className="font-mono text-[10px] text-neutral-400 dark:text-neutral-500 uppercase tracking-widest leading-none">
-              SYSTEM DASHBOARD // WORKSPACE SPECIFICATION
+          <div className="flex flex-col items-start space-y-1">
+            <div className="font-mono text-[10px] text-[#8C867E] dark:text-[#6E6A63] uppercase tracking-[0.14em] leading-none">
+              STUDIO WORKSPACE · ARCHITECTURE & SPRINT LEDGER
             </div>
-            <h1 className="text-lg sm:text-2xl font-extrabold tracking-tight text-neutral-950 dark:text-neutral-50 font-sans leading-tight">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#181715] dark:text-[#F3F1EC] font-serif leading-tight">
               Software Engineering Operations
             </h1>
           </div>
@@ -289,12 +289,12 @@ function DashboardContent() {
           <div className="flex-1 min-h-[20px] sm:min-h-[28px]" />
 
           {/* Bottom Edge Row */}
-          <div className="font-mono text-xs text-neutral-500 dark:text-neutral-400 flex flex-wrap items-center justify-start gap-2 leading-none">
-            <span>STATUS: </span>
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+          <div className="font-mono text-[11px] text-[#5C5852] dark:text-[#A6A29A] flex flex-wrap items-center justify-start gap-2 leading-none">
+            <span className="text-[#8C867E] dark:text-[#6E6A63]">STATUS:</span>
+            <span className="font-semibold text-[#181715] dark:text-[#F3F1EC]">
               NOMINAL
             </span>
-            <span>·</span>
+            <span className="text-[#8C867E]/60">·</span>
             <span className="tabular-nums">
               {new Date().toISOString().substring(0, 10)}
             </span>
@@ -334,19 +334,19 @@ function DashboardContent() {
         )}
       </main>
 
-      {/* Swiss Clean Footer: Left-aligned stacked rows at top & bottom */}
-      <footer className="border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 pt-2 pb-2 font-mono text-xs text-neutral-500 dark:text-neutral-400 text-left">
+      {/* Editorial Studio Footer: Left-aligned stacked rows at top & bottom */}
+      <footer className="bg-[#EFECE6] dark:bg-[#141417] pt-3 pb-3 font-mono text-xs text-[#5C5852] dark:text-[#A6A29A] text-left">
         <div className="max-w-7xl mx-auto px-3 sm:px-8 lg:px-12 min-h-[60px] sm:min-h-[68px] flex flex-col items-start justify-between gap-2">
           <div className="flex flex-wrap items-center justify-start gap-2 sm:gap-3 leading-tight">
-            <span className="font-bold text-neutral-900 dark:text-neutral-100 uppercase">
+            <span className="font-serif text-sm font-semibold text-[#181715] dark:text-[#F3F1EC]">
               Zoo
             </span>
-            <span className="text-neutral-300 dark:text-neutral-700">·</span>
-            <span>SWISS MODERNIST PROJECT MANAGEMENT ARCHITECTURE</span>
+            <span className="text-[#8C867E]/60">·</span>
+            <span className="text-[11px]">EDITORIAL SOFTWARE PROJECT & SPRINT STUDIO</span>
           </div>
 
-          <div className="text-[10px] sm:text-[11px] text-neutral-400 dark:text-neutral-500 tabular-nums leading-tight">
-            7-ARC SPECTRAL VELOCITY ENGINE · ZERO PILLS · PURE SWISS ALIGNMENT
+          <div className="text-[10px] sm:text-[11px] text-[#8C867E] dark:text-[#6E6A63] tabular-nums leading-tight">
+            7-ARC SPECTRAL VELOCITY · TONAL SURFACE ARCHITECTURE
           </div>
         </div>
       </footer>

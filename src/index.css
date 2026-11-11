@@ -3,25 +3,45 @@
 
 @theme {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: 'Fraunces', Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+  --bg-canvas: #F6F4EF;
+  --bg-surface: #EFECE6;
+  --bg-recessed: #E5E0D6;
+  --text-primary: #181715;
+  --text-secondary: #5C5852;
+  --text-muted: #8C867E;
+  --accent-signal: #D94E28;
+}
+
+.dark {
+  color-scheme: dark;
+  --bg-canvas: #0C0C0E;
+  --bg-surface: #141417;
+  --bg-recessed: #1E1E24;
+  --text-primary: #F3F1EC;
+  --text-secondary: #A6A29A;
+  --text-muted: #6E6A63;
+  --accent-signal: #E85D36;
 }
 
 body {
   font-family: var(--font-sans);
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom crisp hairline borders and tabular numbers */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Crisp scrollbar */
+/* Subtle editorial scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -30,8 +50,8 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(150, 150, 150, 0.25);
+  background: rgba(140, 134, 126, 0.28);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(150, 150, 150, 0.45);
+  background: rgba(140, 134, 126, 0.48);
 }
