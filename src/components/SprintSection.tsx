@@ -1,10 +1,24 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Pencil, Check, Trash2, Lock } from 'lucide-react';
-import { Project, Task, TaskStatus, ProjectDetails } from '../types';
+import { Pencil, Check, Trash2, Lock, GripVertical } from 'lucide-react';
+import {
+  Project,
+  Task,
+  TaskStatus,
+  ProjectDetails,
+  parseVersionFramework,
+  formatVersionFramework,
+} from '../types';
 import { RainbowProgress } from './RainbowProgress';
 
 interface SwipeableTaskRowProps {
   task: Task;
+  isDragging?: boolean;
+  isDragOver?: boolean;
+  onDragStartTask: (taskId: string) => void;
+  onDragOverTask: (taskId: string, e: React.DragEvent) => void;
+  onDropTask: (targetTaskId: string) => void;
+  onDragEndTask: () => void;
+  onTouchDropTask: (draggedTaskId: string, targetTaskId: string) => void;
   onToggleTaskComplete: (taskId: string) => void;
   onUpdateTaskStatus: (taskId: string, status: TaskStatus) => void;
   onUpdateTaskTitle: (taskId: string, newTitle: string) => void;
@@ -13,6 +27,13 @@ interface SwipeableTaskRowProps {
 
 const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
   task,
+  isDragging = false,
+  isDragOver = false,
+  onDragStartTask,
+  onDragOverTask,
+  onDropTask,
+  onDragEndTask,
+  onTouchDropTask,
   onToggleTaskComplete,
   onUpdateTaskStatus,
   onUpdateTaskTitle,
@@ -79,9 +100,42 @@ const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
     setIsEditingTitle(false);
   };
 
+  // Touch vertical drag-and-drop support on the grip handle
+  const handleTouchGripMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+    const rowEl = elem?.closest('[data-task-id]') as HTMLElement | null;
+    if (rowEl) {
+      const targetId = rowEl.getAttribute('data-task-id');
+      if (targetId && targetId !== task.id) {
+        onTouchDropTask(task.id, targetId);
+      }
+    }
+  };
+
   return (
     <div
-      className="relative overflow-hidden select-none"
+      data-task-id={task.id}
+      draggable={!isEditingTitle}
+      onDragStart={(e) => {
+        if (isEditingTitle) {
+          e.preventDefault();
+          return;
+        }
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', task.id);
+        onDragStartTask(task.id);
+      }}
+      onDragOver={(e) => onDragOverTask(task.id, e)}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDropTask(task.id);
+      }}
+      onDragEnd={onDragEndTask}
+      className={`relative overflow-hidden select-none transition-opacity ${
+        isDragging ? 'opacity-45' : 'opacity-100'
+      } ${isDragOver ? 'border-t-2 border-[#D94E28] dark:border-[#E85D36]' : ''}`}
       onWheel={handleWheel}
     >
       {/* Revealed Trash Can Button Underneath on Right */}
@@ -112,10 +166,32 @@ const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
           }
         }}
         style={{ transform: `translateX(${offsetX}px)` }}
-        className="relative z-10 bg-[#EFECE6] dark:bg-[#141417] pt-2 pb-2.5 pr-2 flex flex-col items-start justify-between space-y-1.5 hover:bg-[#E7E3DA] dark:hover:bg-[#1B1B20] transition-colors text-left cursor-grab active:cursor-grabbing"
+        className="relative z-10 bg-[#EFECE6] dark:bg-[#141417] pt-2 pb-2.5 pr-2 flex flex-col items-start justify-between space-y-1.5 hover:bg-[#E7E3DA] dark:hover:bg-[#1B1B20] transition-colors text-left"
       >
-        {/* Top Row of Task Cell: Checkbox & Inline Editable Task Title */}
-        <div className="flex items-start justify-start gap-2.5 w-full">
+        {/* Top Row of Task Cell: Drag Grip Handle, Checkbox & Inline Editable Task Title */}
+        <div className="flex items-start justify-start gap-2 w-full">
+          {/* Drag-and-Drop Reorder Grip Handle */}
+          <span
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+              onDragStartTask(task.id);
+            }}
+            onTouchMove={(e) => {
+              e.stopPropagation();
+              handleTouchGripMove(e);
+            }}
+            onTouchEnd={(e) => {
+              e.stopPropagation();
+              onDragEndTask();
+            }}
+            className="mt-0.5 text-[#8C867E] hover:text-[#181715] dark:text-[#6E6A63] dark:hover:text-[#F3F1EC] cursor-grab active:cursor-grabbing shrink-0 touch-none"
+            title="Drag to reorder task within sprint"
+            aria-label="Drag to reorder task"
+          >
+            <GripVertical className="w-3.5 h-3.5" />
+          </span>
+
           <button
             type="button"
             onMouseDown={(e) => e.stopPropagation()}
@@ -186,7 +262,7 @@ const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
         </div>
 
         {/* Bottom Row of Task Cell: Status Selector Only */}
-        <div className="pl-6.5 flex items-center justify-start font-mono text-[11px] leading-none">
+        <div className="pl-11 flex items-center justify-start font-mono text-[11px] leading-none">
           <select
             value={task.status}
             onMouseDown={(e) => e.stopPropagation()}
@@ -214,8 +290,20 @@ interface SprintSectionProps {
   onToggleTaskComplete: (taskId: string) => void;
   onUpdateTaskStatus: (taskId: string, status: TaskStatus) => void;
   onUpdateTaskTitle: (taskId: string, newTitle: string) => void;
-  onAddTask: (projectId: string, title: string, tags: string[]) => void;
+  onAddTask: (
+    projectId: string,
+    title: string,
+    tags: string[],
+    bumpMajorVersion: boolean
+  ) => void;
   onDeleteTask: (taskId: string) => void;
+  onReorderTasks: (
+    projectId: string,
+    draggedTaskId: string,
+    targetTaskId: string
+  ) => void;
+  onEndSprint: (projectId: string) => void;
+  onUpdateProjectVersion: (projectId: string, newVersion: string) => void;
   onUpdateProjectDetails: (projectId: string, details: ProjectDetails) => void;
   onUpdateProject: (updatedProject: Project) => void;
   onDeleteProject: (projectId: string) => void;
@@ -229,6 +317,9 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
   onUpdateTaskTitle,
   onAddTask,
   onDeleteTask,
+  onReorderTasks,
+  onEndSprint,
+  onUpdateProjectVersion,
   onUpdateProjectDetails,
   onUpdateProject,
   onDeleteProject,
@@ -249,9 +340,19 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // Track inline new task title per project
+  // Track inline new task title, tags, and New Version toggle per project
   const [newTaskInput, setNewTaskInput] = useState<Record<string, string>>({});
   const [newTaskTags, setNewTaskTags] = useState<Record<string, string>>({});
+  const [bumpVersionOnAdd, setBumpVersionOnAdd] = useState<Record<string, boolean>>({});
+
+  // Track long-press inline editing of version per project
+  const [editingVersionProjId, setEditingVersionProjId] = useState<string | null>(null);
+  const [versionDraft, setVersionDraft] = useState<string>('');
+  const versionLongPressTimerRef = useRef<number | null>(null);
+
+  // Track drag-and-drop task state
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
 
   const toggleDetails = (projectId: string) => {
     setExpandedDetails((prev) => ({
@@ -393,9 +494,37 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
           .filter(Boolean)
       : ['sprint-task'];
 
-    onAddTask(projectId, title, parsedTags);
+    const shouldBumpVersion = !!bumpVersionOnAdd[projectId];
+    onAddTask(projectId, title, parsedTags, shouldBumpVersion);
     setNewTaskInput((prev) => ({ ...prev, [projectId]: '' }));
     setNewTaskTags((prev) => ({ ...prev, [projectId]: '' }));
+    setBumpVersionOnAdd((prev) => ({ ...prev, [projectId]: false }));
+  };
+
+  const startVersionLongPress = (project: Project) => {
+    if (versionLongPressTimerRef.current) {
+      window.clearTimeout(versionLongPressTimerRef.current);
+    }
+    versionLongPressTimerRef.current = window.setTimeout(() => {
+      setEditingVersionProjId(project.id);
+      setVersionDraft(project.version);
+      versionLongPressTimerRef.current = null;
+    }, 450);
+  };
+
+  const cancelVersionLongPress = () => {
+    if (versionLongPressTimerRef.current) {
+      window.clearTimeout(versionLongPressTimerRef.current);
+      versionLongPressTimerRef.current = null;
+    }
+  };
+
+  const commitVersionEdit = (project: Project) => {
+    const trimmed = versionDraft.trim();
+    if (trimmed && trimmed !== project.version) {
+      onUpdateProjectVersion(project.id, trimmed);
+    }
+    setEditingVersionProjId(null);
   };
 
   return (
@@ -509,10 +638,21 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
             return matchesStatus && matchesSearch && matchesTag;
           });
 
-          const isDetailsOpen = !!expandedDetails[project.id];
+          const isSprintCompleted = !!project.sprintCompleted;
+          // When sprint is complete, the title and details only appear
+          const isDetailsOpen = isSprintCompleted ? true : !!expandedDetails[project.id];
           const draft = editingProjects[project.id];
           const isEditingProject = !!draft;
           const showPassword = !!visiblePasswords[project.id];
+          const isBumpChecked = !!bumpVersionOnAdd[project.id];
+          const parsedVer = parseVersionFramework(project.version);
+          const nextAddVersionPreview = isSprintCompleted
+            ? isBumpChecked
+              ? formatVersionFramework(parsedVer.major + 1, 1, 0)
+              : formatVersionFramework(parsedVer.major, parsedVer.sprint + 1, 0)
+            : isBumpChecked
+            ? formatVersionFramework(parsedVer.major + 1, parsedVer.sprint, completedCount)
+            : formatVersionFramework(parsedVer.major, parsedVer.sprint, completedCount);
 
           return (
             <article
@@ -522,7 +662,7 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
             >
               {/* Compressed & Combined Project Header + Details Container */}
               <div className="px-4 sm:px-6 py-3 border-b border-[#181715]/[0.07] dark:border-white/[0.06] flex flex-col items-start text-left">
-                {/* Compact Title Bar (Always Visible: Toggle, Edit/Delete Icons, Title, Version, Velocity, Last Touched) */}
+                {/* Compact Title Bar (Always Visible: Toggle, Edit/Delete Icons, Title, Version [Long-Press Editable], Velocity, Last Touched, End Sprint Button) */}
                 <div className="w-full flex flex-wrap items-center justify-start gap-x-2.5 gap-y-1.5 leading-none">
                   {/* Sliding Toggle Control: Moving toggle leaves only title or reveals the rest of the details */}
                   <button
@@ -594,17 +734,48 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
                     {project.name}
                   </h3>
 
-                  <span className="font-mono text-xs font-semibold text-[#5C5852] dark:text-[#A6A29A] tabular-nums leading-none">
-                    {project.version}
-                  </span>
+                  {/* Automatic Version (Ver.Sprint.TasksCompleted) — Editable on Long Press */}
+                  {editingVersionProjId === project.id ? (
+                    <input
+                      type="text"
+                      autoFocus
+                      value={versionDraft}
+                      onChange={(e) => setVersionDraft(e.target.value)}
+                      onBlur={() => commitVersionEdit(project)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          commitVersionEdit(project);
+                        } else if (e.key === 'Escape') {
+                          setEditingVersionProjId(null);
+                        }
+                      }}
+                      className="w-20 px-1.5 py-0.5 font-mono text-xs font-semibold bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] tabular-nums focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
+                    />
+                  ) : (
+                    <span
+                      onPointerDown={() => startVersionLongPress(project)}
+                      onPointerUp={cancelVersionLongPress}
+                      onPointerLeave={cancelVersionLongPress}
+                      onPointerCancel={cancelVersionLongPress}
+                      onDoubleClick={() => {
+                        setEditingVersionProjId(project.id);
+                        setVersionDraft(project.version);
+                      }}
+                      title="Automatic Version (Version.Sprint.TasksCompleted) — Long-press to edit manually"
+                      className="font-mono text-xs font-semibold text-[#5C5852] dark:text-[#A6A29A] hover:text-[#D94E28] dark:hover:text-[#E85D36] tabular-nums leading-none cursor-pointer select-none transition-colors"
+                    >
+                      {project.version}
+                    </span>
+                  )}
 
                   <span className="text-[#8C867E]/60">·</span>
 
                   {/* Compact Rainbow Velocity */}
                   <div className="inline-flex items-center gap-1.5">
                     <RainbowProgress
-                      completedCount={completedCount}
-                      totalCount={projectTasks.length}
+                      completedCount={isSprintCompleted ? projectTasks.length || 1 : completedCount}
+                      totalCount={isSprintCompleted ? projectTasks.length || 1 : projectTasks.length}
                       size="sm"
                       showLabel={true}
                     />
@@ -616,9 +787,25 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
                   <span className="font-mono text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] tabular-nums leading-none">
                     TOUCHED <strong className="text-[#181715] dark:text-[#F3F1EC]">{formatTimeAgo(project.lastTouched)}</strong>
                   </span>
+
+                  {/* One Button to End Current Sprint (Confirms all tasks in sprint complete & pushed to live site) */}
+                  {!isSprintCompleted ? (
+                    <button
+                      type="button"
+                      onClick={() => onEndSprint(project.id)}
+                      className="ml-auto px-2.5 py-1 font-mono text-[10px] bg-[#181715] hover:bg-[#D94E28] text-[#F3F1EC] dark:bg-[#F3F1EC] dark:hover:bg-[#E85D36] dark:text-[#181715] dark:hover:text-white font-semibold uppercase tracking-wider whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+                      title="Confirm all tasks in sprint complete and push to live site"
+                    >
+                      End Sprint
+                    </button>
+                  ) : (
+                    <span className="ml-auto px-2 py-0.5 font-mono text-[10px] bg-[#D94E28]/15 text-[#D94E28] dark:bg-[#E85D36]/20 dark:text-[#E85D36] font-semibold uppercase tracking-wider whitespace-nowrap shrink-0">
+                      Sprint Complete · Add Task to Start Next
+                    </span>
+                  )}
                 </div>
 
-                {/* Expanded Combined Details & Edit Drawer (Hidden when toggle is off and not editing) */}
+                {/* Expanded Combined Details & Edit Drawer (Always shown when sprint is complete, or when toggle is on) */}
                 {(isDetailsOpen || isEditingProject) && (
                   <div className="w-full pt-3 mt-2.5 border-t border-[#181715]/[0.07] dark:border-white/[0.06] flex flex-col items-start space-y-2 font-mono text-xs text-left">
                     {isEditingProject && draft ? (
@@ -896,43 +1083,81 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
                 )}
               </div>
 
-              {/* Tasks List Container: Left-aligned stacked rows at top & bottom */}
-              <div className="px-4 sm:px-6 pt-3 pb-3 min-h-[280px] flex flex-col justify-between items-start text-left">
-                {/* Top Edge: Task Queue Label + Stacked Task Rows */}
-                <div className="w-full flex flex-col items-start">
-                  <div className="pb-2 text-xs font-mono leading-none">
-                    <span className="text-[10px] uppercase tracking-[0.12em] text-[#8C867E] dark:text-[#6E6A63]">
-                      NEXT SPRINT DELIVERABLES ({displayedTasks.length})
-                    </span>
-                  </div>
+              {/* Tasks List & Add Task Container: When sprint is complete, only title and details appear above, plus compact Add Task bar below to start next sprint */}
+              <div
+                className={`px-4 sm:px-6 pt-3 pb-3 flex flex-col justify-between items-start text-left ${
+                  isSprintCompleted ? '' : 'min-h-[280px]'
+                }`}
+              >
+                {!isSprintCompleted && (
+                  <>
+                    {/* Top Edge: Task Queue Label + Stacked Drag-and-Drop Reorderable Task Rows */}
+                    <div className="w-full flex flex-col items-start">
+                      <div className="pb-2 text-xs font-mono leading-none flex items-center justify-between w-full">
+                        <span className="text-[10px] uppercase tracking-[0.12em] text-[#8C867E] dark:text-[#6E6A63]">
+                          NEXT SPRINT DELIVERABLES ({displayedTasks.length})
+                        </span>
+                        <span className="text-[9px] uppercase tracking-wider text-[#8C867E] dark:text-[#6E6A63]">
+                          DRAG HANDLE TO REORDER · SLIDE LEFT TO DELETE
+                        </span>
+                      </div>
 
-                  {displayedTasks.length === 0 ? (
-                    <div className="w-full py-3 border-t border-b border-[#181715]/[0.07] dark:border-white/[0.06] font-mono text-xs text-[#8C867E] dark:text-[#6E6A63] text-left">
-                      No tasks match the active filters. Adjust your search or add a new sprint task below.
+                      {displayedTasks.length === 0 ? (
+                        <div className="w-full py-3 border-t border-b border-[#181715]/[0.07] dark:border-white/[0.06] font-mono text-xs text-[#8C867E] dark:text-[#6E6A63] text-left">
+                          No tasks match the active filters. Adjust your search or add a new sprint task below.
+                        </div>
+                      ) : (
+                        <div className="w-full divide-y divide-[#181715]/[0.06] dark:divide-white/[0.05] border-t border-b border-[#181715]/[0.08] dark:border-white/[0.07]">
+                          {displayedTasks.map((task) => (
+                            <SwipeableTaskRow
+                              key={task.id}
+                              task={task}
+                              isDragging={draggedTaskId === task.id}
+                              isDragOver={dragOverTaskId === task.id && draggedTaskId !== task.id}
+                              onDragStartTask={(id) => setDraggedTaskId(id)}
+                              onDragOverTask={(id, e) => {
+                                e.preventDefault();
+                                if (draggedTaskId && draggedTaskId !== id) {
+                                  setDragOverTaskId(id);
+                                }
+                              }}
+                              onDropTask={(targetId) => {
+                                if (draggedTaskId && draggedTaskId !== targetId) {
+                                  onReorderTasks(project.id, draggedTaskId, targetId);
+                                }
+                                setDraggedTaskId(null);
+                                setDragOverTaskId(null);
+                              }}
+                              onDragEndTask={() => {
+                                setDraggedTaskId(null);
+                                setDragOverTaskId(null);
+                              }}
+                              onTouchDropTask={(fromId, toId) => {
+                                if (fromId !== toId) {
+                                  onReorderTasks(project.id, fromId, toId);
+                                }
+                              }}
+                              onToggleTaskComplete={onToggleTaskComplete}
+                              onUpdateTaskStatus={onUpdateTaskStatus}
+                              onUpdateTaskTitle={onUpdateTaskTitle}
+                              onDeleteTask={onDeleteTask}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="w-full divide-y divide-[#181715]/[0.06] dark:divide-white/[0.05] border-t border-b border-[#181715]/[0.08] dark:border-white/[0.07]">
-                      {displayedTasks.map((task) => (
-                        <SwipeableTaskRow
-                          key={task.id}
-                          task={task}
-                          onToggleTaskComplete={onToggleTaskComplete}
-                          onUpdateTaskStatus={onUpdateTaskStatus}
-                          onUpdateTaskTitle={onUpdateTaskTitle}
-                          onDeleteTask={onDeleteTask}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
 
-                {/* Open Vertical Space in Middle of Tasks Container */}
-                <div className="flex-1 min-h-[48px]" />
+                    {/* Open Vertical Space in Middle of Tasks Container */}
+                    <div className="flex-1 min-h-[48px]" />
+                  </>
+                )}
 
-                {/* Bottom Edge: Inline "Add Next Task" form */}
+                {/* Bottom Edge: Inline "Add Next Task" form with New Version Toggle */}
                 <form
                   onSubmit={(e) => handleAddNewTask(project.id, e)}
-                  className="w-full pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-2 font-mono text-xs"
+                  className={`w-full ${
+                    isSprintCompleted ? 'pt-0' : 'pt-3'
+                  } flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-2 font-mono text-xs`}
                 >
                   <input
                     type="text"
@@ -940,7 +1165,11 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
                     onChange={(e) =>
                       setNewTaskInput((prev) => ({ ...prev, [project.id]: e.target.value }))
                     }
-                    placeholder="+ ADD NEXT TASK FOR CURRENT SPRINT..."
+                    placeholder={
+                      isSprintCompleted
+                        ? '+ ADD NEW TASK TO START NEXT SPRINT...'
+                        : '+ ADD NEXT TASK FOR CURRENT SPRINT...'
+                    }
                     className="flex-1 px-3 py-1.5 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36] text-xs placeholder:text-[#8C867E] dark:placeholder:text-[#6E6A63] text-left"
                   />
                   <input
@@ -950,8 +1179,43 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
                       setNewTaskTags((prev) => ({ ...prev, [project.id]: e.target.value }))
                     }
                     placeholder="TAGS (e.g. api, db)"
-                    className="sm:w-52 px-3 py-1.5 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36] text-xs placeholder:text-[#8C867E] dark:placeholder:text-[#6E6A63] text-left"
+                    className="sm:w-44 px-3 py-1.5 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36] text-xs placeholder:text-[#8C867E] dark:placeholder:text-[#6E6A63] text-left"
                   />
+
+                  {/* Toggle Version for New Version Number (or if off, just update) */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isBumpChecked}
+                    onClick={() =>
+                      setBumpVersionOnAdd((prev) => ({
+                        ...prev,
+                        [project.id]: !prev[project.id],
+                      }))
+                    }
+                    className="px-2.5 py-1.5 bg-[#E5E0D6] dark:bg-[#1E1E24] inline-flex items-center justify-between sm:justify-start gap-2 text-[10px] uppercase tracking-wider text-[#5C5852] dark:text-[#A6A29A] hover:text-[#181715] dark:hover:text-[#F3F1EC] cursor-pointer select-none shrink-0"
+                    title="Toggle ON for a new major version number when adding task, or leave OFF to just update"
+                  >
+                    <span
+                      className={`w-6 h-3.5 flex items-center p-0.5 transition-colors ${
+                        isBumpChecked
+                          ? 'bg-[#D94E28] dark:bg-[#E85D36] justify-end'
+                          : 'bg-[#CFC9BE] dark:bg-[#2A2A32] justify-start'
+                      }`}
+                    >
+                      <span
+                        className={`w-2.5 h-2.5 ${
+                          isBumpChecked ? 'bg-white' : 'bg-[#5C5852] dark:bg-[#A6A29A]'
+                        }`}
+                      />
+                    </span>
+                    <span className="tabular-nums font-medium">
+                      {isBumpChecked
+                        ? `NEW VER (${nextAddVersionPreview})`
+                        : `UPDATE (${nextAddVersionPreview})`}
+                    </span>
+                  </button>
+
                   <button
                     type="submit"
                     className="px-4 py-1.5 bg-[#D94E28] hover:bg-[#C2411E] dark:bg-[#E85D36] dark:hover:bg-[#D94E28] text-white font-semibold uppercase tracking-wider text-xs whitespace-nowrap shrink-0 text-left transition-colors"

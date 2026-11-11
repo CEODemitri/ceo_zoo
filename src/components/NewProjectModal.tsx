@@ -15,9 +15,9 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
   const [name, setName] = useState('');
   const [businessType, setBusinessType] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().substring(0, 10));
-  const [version, setVersion] = useState('v1.0.0');
+  const [version, setVersion] = useState('1.1.0');
   const [activeUsers, setActiveUsers] = useState<number>(100);
-  const [sprintName, setSprintName] = useState('Sprint 01 // Initial Architecture');
+  const [sprintName, setSprintName] = useState('Sprint 1 // Initial Architecture');
   const [sprintGoal, setSprintGoal] = useState('Bootstrap repository foundation and CI pipeline.');
 
   // Details
@@ -38,10 +38,10 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
       name: name.trim(),
       businessType: businessType.trim() || 'Software / Web Application',
       startDate: startDate || new Date().toISOString().substring(0, 10),
-      version: version.trim() || 'v1.0.0',
+      version: version.trim() || '1.1.0',
       activeUsers: Number(activeUsers) || 0,
       lastTouched: new Date().toISOString(),
-      currentSprintName: sprintName.trim() || 'Sprint 01 // Inception',
+      currentSprintName: sprintName.trim() || 'Sprint 1 // Inception',
       sprintGoal: sprintGoal.trim() || 'Core module engineering.',
       details: {
         liveSite: liveSite.trim() || 'https://staging.internal.net',
@@ -119,13 +119,13 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
 
             <div>
               <label className="block text-[10px] uppercase text-[#8C867E] dark:text-[#6E6A63] mb-1">
-                Initial Version (SemVer)
+                Version (Ver.Sprint.Tasks)
               </label>
               <input
                 type="text"
                 value={version}
                 onChange={(e) => setVersion(e.target.value)}
-                placeholder="v1.0.0"
+                placeholder="1.1.0"
                 className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
               />
             </div>

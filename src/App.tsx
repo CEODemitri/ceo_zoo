@@ -4,7 +4,15 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Project, Task, AuditLog, TaskStatus, ProjectDetails } from './types';
+import {
+  Project,
+  Task,
+  AuditLog,
+  TaskStatus,
+  ProjectDetails,
+  parseVersionFramework,
+  formatVersionFramework,
+} from './types';
 import { INITIAL_PROJECTS, INITIAL_TASKS, INITIAL_AUDIT_LOGS } from './data/seedData';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -15,9 +23,9 @@ import { ProjectLogModal } from './components/ProjectLogModal';
 import { NewProjectModal } from './components/NewProjectModal';
 import { AuthModal } from './components/AuthModal';
 
-const STORAGE_PROJECTS_KEY = 'kern_projects_data_v1';
-const STORAGE_TASKS_KEY = 'kern_tasks_data_v1';
-const STORAGE_LOGS_KEY = 'zoo_logs_data_v2';
+const STORAGE_PROJECTS_KEY = 'zoo_projects_data_v3';
+const STORAGE_TASKS_KEY = 'zoo_tasks_data_v3';
+const STORAGE_LOGS_KEY = 'zoo_logs_data_v3';
 
 function DashboardContent() {
   const { user } = useAuth();
@@ -127,20 +135,57 @@ function DashboardContent() {
     );
   };
 
+  // Helper to sync project's X.Y.Z version (Major.Sprint.CompletedTasks) & lastTouched
+  const syncProjectAutoVersion = (
+    projectId: string,
+    nextTasksList: Task[],
+    overrideMajor?: number,
+    overrideSprint?: number,
+    overrideSprintCompleted?: boolean
+  ) => {
+    const doneCount = nextTasksList.filter(
+      (t) => t.projectId === projectId && t.status === 'done'
+    ).length;
+
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        const parsed = parseVersionFramework(p.version);
+        const major = overrideMajor !== undefined ? overrideMajor : parsed.major;
+        const sprint = overrideSprint !== undefined ? overrideSprint : parsed.sprint;
+        const nextVersion = formatVersionFramework(major, sprint, doneCount);
+        const nextSprintName =
+          overrideSprint !== undefined
+            ? p.currentSprintName.replace(/^Sprint\s+\d+/i, `Sprint ${sprint}`)
+            : p.currentSprintName;
+
+        return {
+          ...p,
+          version: nextVersion,
+          currentSprintName: nextSprintName,
+          sprintCompleted:
+            overrideSprintCompleted !== undefined
+              ? overrideSprintCompleted
+              : p.sprintCompleted,
+          lastTouched: new Date().toISOString(),
+        };
+      })
+    );
+  };
+
   // Task event handlers
   const handleToggleTaskComplete = (taskId: string) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
     const newStatus: TaskStatus = task.status === 'done' ? 'in_progress' : 'done';
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, status: newStatus, updatedAt: new Date().toISOString() }
-          : t
-      )
+    const nextTasks = tasks.map((t) =>
+      t.id === taskId
+        ? { ...t, status: newStatus, updatedAt: new Date().toISOString() }
+        : t
     );
-    touchProject(task.projectId);
+    setTasks(nextTasks);
+    syncProjectAutoVersion(task.projectId, nextTasks);
     recordLog(
       task.projectId,
       'TASK_COMPLETE',
@@ -152,14 +197,13 @@ function DashboardContent() {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, status: newStatus, updatedAt: new Date().toISOString() }
-          : t
-      )
+    const nextTasks = tasks.map((t) =>
+      t.id === taskId
+        ? { ...t, status: newStatus, updatedAt: new Date().toISOString() }
+        : t
     );
-    touchProject(task.projectId);
+    setTasks(nextTasks);
+    syncProjectAutoVersion(task.projectId, nextTasks);
     recordLog(
       task.projectId,
       'TASK_COMPLETE',
@@ -186,7 +230,18 @@ function DashboardContent() {
     );
   };
 
-  const handleAddTask = (projectId: string, title: string, tags: string[]) => {
+  const handleAddTask = (
+    projectId: string,
+    title: string,
+    tags: string[],
+    bumpMajorVersion: boolean = false
+  ) => {
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) return;
+
+    const parsed = parseVersionFramework(project.version);
+    const nowIso = new Date().toISOString();
+
     const newTask: Task = {
       id: `task-${Date.now()}`,
       projectId,
@@ -194,13 +249,152 @@ function DashboardContent() {
       status: 'in_progress',
       tags,
       assignedTo: user?.username || 'operator',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: nowIso,
+      updatedAt: nowIso,
     };
 
-    setTasks((prev) => [newTask, ...prev]);
+    if (project.sprintCompleted) {
+      // Starting the next sprint after the previous sprint was ended
+      const nextMajor = bumpMajorVersion ? parsed.major + 1 : parsed.major;
+      const nextSprint = bumpMajorVersion ? 1 : parsed.sprint + 1;
+      const nextTasks = [
+        newTask,
+        ...tasks.filter((t) => t.projectId !== projectId),
+      ];
+      setTasks(nextTasks);
+      syncProjectAutoVersion(
+        projectId,
+        nextTasks,
+        nextMajor,
+        nextSprint,
+        false
+      );
+      recordLog(
+        projectId,
+        'CREATE',
+        `Started Sprint ${nextSprint} (${formatVersionFramework(nextMajor, nextSprint, 0)}) with deliverable: "${title}"`
+      );
+    } else {
+      const nextMajor = bumpMajorVersion ? parsed.major + 1 : parsed.major;
+      const nextTasks = [newTask, ...tasks];
+      setTasks(nextTasks);
+      syncProjectAutoVersion(
+        projectId,
+        nextTasks,
+        nextMajor,
+        parsed.sprint,
+        false
+      );
+      recordLog(projectId, 'CREATE', `Created sprint task: "${title}"`);
+    }
+  };
+
+  // Drag-and-drop task reordering within a sprint
+  const handleReorderTasks = (
+    projectId: string,
+    draggedTaskId: string,
+    targetTaskId: string
+  ) => {
+    if (draggedTaskId === targetTaskId) return;
+    setTasks((prev) => {
+      const fromIndex = prev.findIndex(
+        (t) => t.id === draggedTaskId && t.projectId === projectId
+      );
+      const toIndex = prev.findIndex(
+        (t) => t.id === targetTaskId && t.projectId === projectId
+      );
+      if (fromIndex === -1 || toIndex === -1) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
     touchProject(projectId);
-    recordLog(projectId, 'CREATE', `Created sprint task: "${title}"`);
+  };
+
+  // One button to end current sprint: confirms all tasks in sprint complete & pushed to live site
+  const handleEndSprint = (projectId: string) => {
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) return;
+
+    const nowIso = new Date().toISOString();
+    const projectTasks = tasks.filter((t) => t.projectId === projectId);
+    const totalCompleted = projectTasks.length;
+    const parsed = parseVersionFramework(project.version);
+    const completedVersion = formatVersionFramework(
+      parsed.major,
+      parsed.sprint,
+      totalCompleted
+    );
+
+    const nextTasks = tasks.map((t) =>
+      t.projectId === projectId
+        ? { ...t, status: 'done' as TaskStatus, updatedAt: nowIso }
+        : t
+    );
+    setTasks(nextTasks);
+
+    const completedDeliverables = projectTasks.map((t) => ({
+      id: `${t.id}-${Date.now()}`,
+      title: t.title,
+      status: 'done' as TaskStatus,
+      tags: t.tags,
+      assignedTo: t.assignedTo,
+      updatedAt: nowIso,
+    }));
+
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              version: completedVersion,
+              sprintCompleted: true,
+              lastTouched: nowIso,
+            }
+          : p
+      )
+    );
+
+    const newEntry: AuditLog = {
+      id: `log-${Date.now()}`,
+      projectId,
+      projectName: project.name,
+      version: completedVersion,
+      sprintName: project.currentSprintName,
+      sprintGoal: project.sprintGoal,
+      deliverables: completedDeliverables,
+      timestamp: nowIso,
+      action: 'DEPLOY',
+      summary: `Ended ${project.currentSprintName} (${completedVersion}) — confirmed all ${totalCompleted} deliverables complete and pushed to live site.`,
+      author: user?.username || 'system_operator',
+    };
+    setLogs((prev) => [newEntry, ...prev]);
+  };
+
+  // Manual version override on long-press
+  const handleUpdateProjectVersion = (projectId: string, newVersion: string) => {
+    const parsed = parseVersionFramework(newVersion);
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              version: newVersion,
+              currentSprintName: p.currentSprintName.replace(
+                /^Sprint\s+\d+/i,
+                `Sprint ${parsed.sprint}`
+              ),
+              lastTouched: new Date().toISOString(),
+            }
+          : p
+      )
+    );
+    recordLog(
+      projectId,
+      'VERSION_BUMP',
+      `Manually updated version tag to ${newVersion}`
+    );
   };
 
   const [deletedTaskUndo, setDeletedTaskUndo] = useState<{
@@ -219,8 +413,9 @@ function DashboardContent() {
     }
 
     setDeletedTaskUndo({ task, index });
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
-    touchProject(task.projectId);
+    const nextTasks = tasks.filter((t) => t.id !== taskId);
+    setTasks(nextTasks);
+    syncProjectAutoVersion(task.projectId, nextTasks);
 
     undoTimerRef.current = window.setTimeout(() => {
       setDeletedTaskUndo(null);
@@ -236,32 +431,23 @@ function DashboardContent() {
     }
 
     const { task, index } = deletedTaskUndo;
-    setTasks((prev) => {
-      const next = [...prev];
-      next.splice(Math.min(index, next.length), 0, task);
-      return next;
-    });
-    touchProject(task.projectId);
+    const nextTasks = [...tasks];
+    nextTasks.splice(Math.min(index, nextTasks.length), 0, task);
+    setTasks(nextTasks);
+    syncProjectAutoVersion(task.projectId, nextTasks);
     setDeletedTaskUndo(null);
   };
 
-  // SemVer bump handler (e.g. v3.2.0 -> v3.2.1 or v3.3.0)
+  // Version bump handler using X.Y.Z framework
   const handleBumpVersion = (projectId: string, type: 'patch' | 'minor') => {
     setProjects((prev) =>
       prev.map((p) => {
         if (p.id !== projectId) return p;
-        const clean = p.version.replace(/^v/, '');
-        const parts = clean.split('.').map(Number);
-        const major = isNaN(parts[0]) ? 1 : parts[0];
-        const minor = isNaN(parts[1]) ? 0 : parts[1];
-        const patch = isNaN(parts[2]) ? 0 : parts[2];
-
-        let newVersion = p.version;
-        if (type === 'patch') {
-          newVersion = `v${major}.${minor}.${patch + 1}`;
-        } else if (type === 'minor') {
-          newVersion = `v${major}.${minor + 1}.0`;
-        }
+        const parsed = parseVersionFramework(p.version);
+        const newVersion =
+          type === 'patch'
+            ? formatVersionFramework(parsed.major, parsed.sprint, parsed.completed + 1)
+            : formatVersionFramework(parsed.major, parsed.sprint + 1, parsed.completed);
 
         recordLog(
           projectId,
@@ -396,6 +582,9 @@ function DashboardContent() {
               onUpdateTaskTitle={handleUpdateTaskTitle}
               onAddTask={handleAddTask}
               onDeleteTask={handleDeleteTask}
+              onReorderTasks={handleReorderTasks}
+              onEndSprint={handleEndSprint}
+              onUpdateProjectVersion={handleUpdateProjectVersion}
               onUpdateProjectDetails={handleUpdateProjectDetails}
               onUpdateProject={handleUpdateProject}
               onDeleteProject={handleDeleteProject}
