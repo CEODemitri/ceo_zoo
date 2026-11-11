@@ -608,9 +608,6 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
                       size="sm"
                       showLabel={true}
                     />
-                    <span className="font-mono text-[10px] text-[#5C5852] dark:text-[#A6A29A] tabular-nums leading-none">
-                      ({completedCount}/{projectTasks.length})
-                    </span>
                   </div>
 
                   <span className="text-[#8C867E]/60">·</span>

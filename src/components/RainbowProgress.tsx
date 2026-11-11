@@ -85,10 +85,6 @@ export const RainbowProgress: React.FC<RainbowProgressProps> = ({
       {showLabel && (
         <div className={`font-mono tabular-nums leading-none ${dimensions.fontSize} text-[#181715] dark:text-[#F3F1EC]`}>
           <span className="font-semibold">{percentage}%</span>
-          <span className="text-[#8C867E] dark:text-[#6E6A63] mx-1.5">/</span>
-          <span className="text-[#5C5852] dark:text-[#A6A29A] text-[11px] tracking-tight">
-            {litCount}/7 BOWS LIT
-          </span>
         </div>
       )}
     </div>
