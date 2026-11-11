@@ -32,10 +32,23 @@ export interface Project {
   details: ProjectDetails;
 }
 
+export interface SprintDeliverableLogItem {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  tags: string[];
+  assignedTo?: string;
+  updatedAt: string;
+}
+
 export interface AuditLog {
   id: string;
   projectId: string;
   projectName: string;
+  version?: string;
+  sprintName?: string;
+  sprintGoal?: string;
+  deliverables?: SprintDeliverableLogItem[];
   timestamp: string;
   action: 'CREATE' | 'VERSION_BUMP' | 'TASK_COMPLETE' | 'DEPLOY' | 'CONFIG_UPDATE';
   summary: string;

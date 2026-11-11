@@ -17,7 +17,7 @@ import { AuthModal } from './components/AuthModal';
 
 const STORAGE_PROJECTS_KEY = 'kern_projects_data_v1';
 const STORAGE_TASKS_KEY = 'kern_tasks_data_v1';
-const STORAGE_LOGS_KEY = 'kern_logs_data_v1';
+const STORAGE_LOGS_KEY = 'zoo_logs_data_v2';
 
 function DashboardContent() {
   const { user } = useAuth();
@@ -85,17 +85,31 @@ function DashboardContent() {
     }
   }, [logs]);
 
-  // Helper to record an audit log entry
+  // Helper to record an audit log entry with version, sprint, and deliverables context
   const recordLog = (
     projectId: string,
     action: AuditLog['action'],
     summary: string
   ) => {
     const project = projects.find((p) => p.id === projectId);
+    const projectDeliverables = tasks
+      .filter((t) => t.projectId === projectId)
+      .map((t) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        tags: t.tags,
+        assignedTo: t.assignedTo,
+        updatedAt: t.updatedAt,
+      }));
     const newEntry: AuditLog = {
       id: `log-${Date.now()}`,
       projectId,
       projectName: project ? project.name : 'Unknown System',
+      version: project?.version,
+      sprintName: project?.currentSprintName,
+      sprintGoal: project?.sprintGoal,
+      deliverables: projectDeliverables,
       timestamp: new Date().toISOString(),
       action,
       summary,
@@ -361,6 +375,7 @@ function DashboardContent() {
             <ProjectRegistryTable
               projects={projects}
               logs={logs}
+              tasks={tasks}
               onOpenLogModal={() => setIsLogModalOpen(true)}
               onOpenNewProject={() => setIsNewProjectModalOpen(true)}
               onSelectProject={handleSelectProject}
@@ -447,6 +462,7 @@ function DashboardContent() {
         onClose={() => setIsLogModalOpen(false)}
         projects={projects}
         logs={logs}
+        tasks={tasks}
       />
 
       <NewProjectModal

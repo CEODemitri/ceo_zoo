@@ -1,7 +1,148 @@
 import { jsPDF } from 'jspdf';
-import { Project, AuditLog } from '../types';
+import { Project, AuditLog, Task, SprintDeliverableLogItem } from '../types';
 
-export const exportProjectsAuditPDF = (projects: Project[], logs: AuditLog[]) => {
+export interface SprintLogGroup {
+  sprintName: string;
+  sprintGoal: string;
+  deliverables: SprintDeliverableLogItem[];
+  events: AuditLog[];
+}
+
+export interface VersionLogGroup {
+  key: string;
+  projectId: string;
+  projectName: string;
+  businessType: string;
+  version: string;
+  isCurrentVersion: boolean;
+  latestTimestamp: string;
+  sprints: SprintLogGroup[];
+}
+
+export const buildVersionSprintLogHierarchy = (
+  projects: Project[],
+  logs: AuditLog[],
+  tasks: Task[] = []
+): VersionLogGroup[] => {
+  const projectMap = new Map<string, Project>();
+  projects.forEach((p) => projectMap.set(p.id, p));
+
+  const versionGroupsMap = new Map<string, VersionLogGroup>();
+
+  const ensureVersionAndSprint = (
+    projectId: string,
+    projectName: string,
+    businessType: string,
+    version: string,
+    sprintName: string,
+    sprintGoal: string,
+    timestamp: string,
+    isCurrentVersion: boolean
+  ): { vGroup: VersionLogGroup; sGroup: SprintLogGroup } => {
+    const vKey = `${projectId}::${version}`;
+    let vGroup = versionGroupsMap.get(vKey);
+    if (!vGroup) {
+      vGroup = {
+        key: vKey,
+        projectId,
+        projectName,
+        businessType,
+        version,
+        isCurrentVersion,
+        latestTimestamp: timestamp,
+        sprints: [],
+      };
+      versionGroupsMap.set(vKey, vGroup);
+    } else {
+      if (isCurrentVersion) vGroup.isCurrentVersion = true;
+      if (timestamp > vGroup.latestTimestamp) {
+        vGroup.latestTimestamp = timestamp;
+      }
+    }
+
+    let sGroup = vGroup.sprints.find((s) => s.sprintName === sprintName);
+    if (!sGroup) {
+      sGroup = {
+        sprintName,
+        sprintGoal,
+        deliverables: [],
+        events: [],
+      };
+      vGroup.sprints.push(sGroup);
+    } else if (!sGroup.sprintGoal && sprintGoal) {
+      sGroup.sprintGoal = sprintGoal;
+    }
+
+    return { vGroup, sGroup };
+  };
+
+  // 1. Seed current active Version -> Sprint -> All Deliverables from live projects & tasks
+  projects.forEach((proj) => {
+    const projTasks = tasks.filter((t) => t.projectId === proj.id);
+    const { sGroup } = ensureVersionAndSprint(
+      proj.id,
+      proj.name,
+      proj.businessType,
+      proj.version,
+      proj.currentSprintName,
+      proj.sprintGoal,
+      proj.lastTouched,
+      true
+    );
+
+    projTasks.forEach((t) => {
+      if (!sGroup.deliverables.some((d) => d.id === t.id)) {
+        sGroup.deliverables.push({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          tags: t.tags,
+          assignedTo: t.assignedTo,
+          updatedAt: t.updatedAt,
+        });
+      }
+    });
+  });
+
+  // 2. Fold in all AuditLog records (including prior versions, historical sprints, and deliverable snapshots)
+  logs.forEach((log) => {
+    const proj = projectMap.get(log.projectId);
+    const version = log.version || proj?.version || 'v1.0.0';
+    const sprintName = log.sprintName || proj?.currentSprintName || 'Sprint 01 // Core';
+    const sprintGoal = log.sprintGoal || (version === proj?.version ? proj?.sprintGoal || '' : '');
+    const businessType = proj?.businessType || 'Software System';
+    const isCurrent = proj ? proj.version === version : false;
+
+    const { sGroup } = ensureVersionAndSprint(
+      log.projectId,
+      log.projectName,
+      businessType,
+      version,
+      sprintName,
+      sprintGoal,
+      log.timestamp,
+      isCurrent
+    );
+
+    if (log.deliverables && log.deliverables.length > 0) {
+      log.deliverables.forEach((item) => {
+        if (!sGroup.deliverables.some((d) => d.id === item.id)) {
+          sGroup.deliverables.push(item);
+        }
+      });
+    }
+
+    sGroup.events.push(log);
+  });
+
+  return Array.from(versionGroupsMap.values());
+};
+
+export const exportProjectsAuditPDF = (
+  projects: Project[],
+  logs: AuditLog[],
+  tasks: Task[] = []
+) => {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -11,18 +152,21 @@ export const exportProjectsAuditPDF = (projects: Project[], logs: AuditLog[]) =>
   const pageWidth = doc.internal.pageSize.getWidth();
   let currentY = 20;
 
-  // Swiss style styling: sharp black & white, clean monospace/helvetica
   doc.setFont('courier', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(20, 20, 20);
-  doc.text('ZOO // SOFTWARE PROJECT REGISTRY & AUDIT LOG', 15, currentY);
+  doc.text('ZOO // SOFTWARE PROJECT REGISTRY & VERSION SPRINT LOG', 15, currentY);
 
   currentY += 7;
   doc.setFont('courier', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
   const now = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
-  doc.text(`GENERATED: ${now}  |  TOTAL PROJECTS: ${projects.length}  |  CLASSIFICATION: INTERNAL TECH AUDIT`, 15, currentY);
+  doc.text(
+    `GENERATED: ${now}  |  TOTAL PROJECTS: ${projects.length}  |  ORGANIZED BY VERSION & SPRINT`,
+    15,
+    currentY
+  );
 
   currentY += 4;
   doc.setDrawColor(20, 20, 20);
@@ -39,7 +183,6 @@ export const exportProjectsAuditPDF = (projects: Project[], logs: AuditLog[]) =>
 
   currentY += 6;
 
-  // Table Header
   doc.setFont('courier', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(80, 80, 80);
@@ -56,13 +199,11 @@ export const exportProjectsAuditPDF = (projects: Project[], logs: AuditLog[]) =>
 
   currentY += 5;
 
-  // Table Rows
   doc.setFont('courier', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(30, 30, 30);
 
   projects.forEach((proj) => {
-    // Check if we need a new page
     if (currentY > 260) {
       doc.addPage();
       currentY = 20;
@@ -78,10 +219,13 @@ export const exportProjectsAuditPDF = (projects: Project[], logs: AuditLog[]) =>
     doc.text(proj.activeUsers.toLocaleString(), 170, currentY);
 
     currentY += 3;
-    // Sub-line with host and live site
     doc.setFontSize(6.5);
     doc.setTextColor(120, 120, 120);
-    doc.text(`Live: ${proj.details.liveSite}  |  Host: ${proj.details.hostedCompany}`, 15, currentY);
+    doc.text(
+      `Live: ${proj.details.liveSite}  |  Host: ${proj.details.hostedCompany}`,
+      15,
+      currentY
+    );
     doc.setFontSize(8);
     doc.setTextColor(30, 30, 30);
 
@@ -95,7 +239,7 @@ export const exportProjectsAuditPDF = (projects: Project[], logs: AuditLog[]) =>
 
   currentY += 8;
 
-  // SECTION 2: AUDIT & ACTIVITY LOG
+  // SECTION 2: LOGS ORGANIZED BY VERSION -> SPRINT -> DELIVERABLES
   if (currentY > 230) {
     doc.addPage();
     currentY = 20;
@@ -104,50 +248,77 @@ export const exportProjectsAuditPDF = (projects: Project[], logs: AuditLog[]) =>
   doc.setFont('courier', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(20, 20, 20);
-  doc.text('02. VERIFIED AUDIT TRAIL & SYSTEM LOGS', 15, currentY);
+  doc.text('02. LOGS BY VERSION, SPRINT & ASSOCIATED DELIVERABLES', 15, currentY);
 
   currentY += 6;
 
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(80, 80, 80);
-  doc.text('TIMESTAMP (UTC)', 15, currentY);
-  doc.text('ACTION', 55, currentY);
-  doc.text('PROJECT', 85, currentY);
-  doc.text('AUTHOR', 125, currentY);
-  doc.text('SUMMARY', 145, currentY);
+  const versionGroups = buildVersionSprintLogHierarchy(projects, logs, tasks);
 
-  currentY += 2;
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.2);
-  doc.line(15, currentY, pageWidth - 15, currentY);
-
-  currentY += 5;
-
-  logs.forEach((log) => {
-    if (currentY > 270) {
+  versionGroups.forEach((vGroup) => {
+    if (currentY > 255) {
       doc.addPage();
       currentY = 20;
     }
 
-    doc.setFont('courier', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(70, 70, 70);
-    doc.text(log.timestamp.replace('T', ' ').substring(0, 16), 15, currentY);
-
     doc.setFont('courier', 'bold');
-    doc.setTextColor(30, 30, 30);
-    doc.text(log.action, 55, currentY);
+    doc.setFontSize(9);
+    doc.setTextColor(20, 20, 20);
+    doc.text(
+      `VERSION ${vGroup.version}  //  ${vGroup.projectName.toUpperCase()} (${vGroup.isCurrentVersion ? 'ACTIVE RELEASE' : 'ARCHIVED RELEASE'})`,
+      15,
+      currentY
+    );
 
-    doc.setFont('courier', 'normal');
-    doc.text(log.projectName.substring(0, 20), 85, currentY);
-    doc.text(log.author, 125, currentY);
+    currentY += 4.5;
 
-    // Summary can wrap or be clipped
-    const splitSummary = doc.splitTextToSize(log.summary, 50);
-    doc.text(splitSummary, 145, currentY);
+    vGroup.sprints.forEach((sGroup) => {
+      if (currentY > 260) {
+        doc.addPage();
+        currentY = 20;
+      }
 
-    currentY += Math.max(6, splitSummary.length * 3.5 + 2);
+      const doneCount = sGroup.deliverables.filter((d) => d.status === 'done').length;
+      doc.setFont('courier', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(60, 60, 60);
+      doc.text(
+        `  SPRINT: ${sGroup.sprintName}  [${doneCount}/${sGroup.deliverables.length} DELIVERABLES DONE]`,
+        15,
+        currentY
+      );
+      currentY += 3.5;
+
+      if (sGroup.sprintGoal) {
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`  OBJECTIVE: ${sGroup.sprintGoal.substring(0, 95)}`, 15, currentY);
+        currentY += 4;
+      }
+
+      sGroup.deliverables.forEach((deliv, idx) => {
+        if (currentY > 272) {
+          doc.addPage();
+          currentY = 20;
+        }
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(30, 30, 30);
+        const statusTag = deliv.status.toUpperCase().padEnd(11, ' ');
+        const num = String(idx + 1).padStart(2, '0');
+        const lineText = `    ${num}. [${statusTag}] ${deliv.title}`;
+        const splitLines = doc.splitTextToSize(lineText, pageWidth - 30);
+        doc.text(splitLines, 15, currentY);
+        currentY += splitLines.length * 3.5 + 1;
+      });
+
+      currentY += 3;
+    });
+
+    doc.setDrawColor(210, 210, 210);
+    doc.setLineWidth(0.2);
+    doc.line(15, currentY, pageWidth - 15, currentY);
+    currentY += 5;
   });
 
   // Footer on each page
@@ -157,11 +328,11 @@ export const exportProjectsAuditPDF = (projects: Project[], logs: AuditLog[]) =>
     doc.setFont('courier', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(140, 140, 140);
-    doc.text(`ZOO OPERATING SYSTEM — PAGE ${i} OF ${pageCount}`, 15, 290);
-    doc.text(`CONFIDENTIAL ENGINEERING AUDIT REPORT`, pageWidth - 65, 290);
+    doc.text(`ZOO STUDIO — PAGE ${i} OF ${pageCount}`, 15, 290);
+    doc.text(`VERSION & SPRINT DELIVERABLES LOG`, pageWidth - 65, 290);
   }
 
-  // Save the PDF
-  const filename = `zoo_project_registry_${new Date().toISOString().substring(0, 10)}.pdf`;
+  const filename = `zoo_version_sprint_logs_${new Date().toISOString().substring(0, 10)}.pdf`;
   doc.save(filename);
 };
+

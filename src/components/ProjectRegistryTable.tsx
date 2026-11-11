@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Project, AuditLog } from '../types';
+import { Project, AuditLog, Task } from '../types';
 import { exportProjectsAuditPDF } from '../utils/pdfExport';
 
 interface ProjectRegistryTableProps {
   projects: Project[];
   logs: AuditLog[];
+  tasks?: Task[];
   onOpenLogModal: () => void;
   onOpenNewProject: () => void;
   onSelectProject: (projectId: string) => void;
@@ -25,6 +26,7 @@ const parseSemVer = (ver: string): number[] => {
 export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
   projects,
   logs,
+  tasks = [],
   onOpenLogModal,
   onOpenNewProject,
   onSelectProject,
@@ -190,7 +192,7 @@ export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
           </button>
 
           <button
-            onClick={() => exportProjectsAuditPDF(projects, logs)}
+            onClick={() => exportProjectsAuditPDF(projects, logs, tasks)}
             className="px-2.5 py-1 font-mono text-[11px] bg-[#E5E0D6] hover:bg-[#DBD5C9] dark:bg-[#1E1E24] dark:hover:bg-[#282830] text-[#181715] dark:text-[#F3F1EC] uppercase tracking-wider transition-colors whitespace-nowrap shrink-0"
           >
             Download PDF
