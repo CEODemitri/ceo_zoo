@@ -107,12 +107,15 @@ export const TopBar: React.FC<TopBarProps> = ({
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => openAuthModal('signin')}
-              className="px-3 py-1.5 font-mono text-[11px] bg-[#E5E0D6] hover:bg-[#DBD5C9] dark:bg-[#1E1E24] dark:hover:bg-[#282830] text-[#181715] dark:text-[#F3F1EC] font-medium uppercase tracking-wider whitespace-nowrap shrink-0 transition-colors"
-            >
-              Sign In
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => openAuthModal('signin')}
+                className="font-mono text-[11px] px-2.5 py-1.5 bg-[#E5E0D6] hover:bg-[#DBD5C9] dark:bg-[#1E1E24] dark:hover:bg-[#282830] text-[#181715] dark:text-[#F3F1EC] uppercase whitespace-nowrap shrink-0 transition-colors"
+                title="Login to operator session"
+              >
+                Login
+              </button>
+            </div>
           )}
 
           {/* New Project Primary Signal CTA */}

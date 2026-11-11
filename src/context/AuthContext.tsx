@@ -14,7 +14,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_SESSION_KEY = 'kern_user_session_v1';
+const STORAGE_SESSION_KEY = 'zoo_user_session_v2';
 const STORAGE_ACCOUNTS_KEY = 'kern_registered_accounts_v1';
 
 // Seed account for immediate zero-friction access
@@ -28,18 +28,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const saved = localStorage.getItem(STORAGE_SESSION_KEY);
       if (saved) return JSON.parse(saved);
-      // Default initial session
-      return {
-        username: 'alex.dev',
-        role: 'Tech Lead / Maintainer',
-        signedInAt: new Date().toISOString(),
-      };
+      return null;
     } catch {
-      return {
-        username: 'alex.dev',
-        role: 'Tech Lead / Maintainer',
-        signedInAt: new Date().toISOString(),
-      };
+      return null;
     }
   });
 

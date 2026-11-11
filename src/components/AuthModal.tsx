@@ -33,12 +33,6 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  const handleQuickDemo = (user: string, pass: string) => {
-    setUsername(user);
-    setPassword(pass);
-    signIn(user, pass);
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-4">
       <div className="w-full max-w-md bg-[#EFECE6] dark:bg-[#141417] text-[#181715] dark:text-[#F3F1EC] shadow-2xl flex flex-col">
@@ -81,9 +75,6 @@ export const AuthModal: React.FC = () => {
               placeholder="e.g. alex.dev"
               className="w-full px-3 py-2 bg-[#E5E0D6] dark:bg-[#1E1E24] text-[#181715] dark:text-[#F3F1EC] focus:outline-none focus:ring-1 focus:ring-[#D94E28] dark:focus:ring-[#E85D36]"
             />
-            <span className="block text-[10px] text-[#8C867E] dark:text-[#6E6A63] mt-1">
-              Single-word identifier or handle. No email needed.
-            </span>
           </div>
 
           <div>
@@ -138,28 +129,6 @@ export const AuthModal: React.FC = () => {
                 </button>
               </p>
             )}
-          </div>
-
-          {/* Quick preset switch */}
-          <div className="pt-3 border-t border-[#181715]/[0.07] dark:border-white/[0.06] flex items-center justify-between text-[10px] text-[#8C867E] dark:text-[#6E6A63]">
-            <span>QUICK PRESETS:</span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('alex.dev', 'password123')}
-                className="underline hover:text-[#181715] dark:hover:text-[#F3F1EC]"
-              >
-                alex.dev
-              </button>
-              <span>·</span>
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('lead_architect', 'kern2026')}
-                className="underline hover:text-[#181715] dark:hover:text-[#F3F1EC]"
-              >
-                lead_architect
-              </button>
-            </div>
           </div>
         </form>
       </div>
