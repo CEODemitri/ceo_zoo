@@ -119,7 +119,7 @@ export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
             01. PROJECT REGISTRY // REPOSITORY INDEX
           </h2>
           <p className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 leading-tight">
-            AGGREGATED REFERENCE INDEX FROM SECTION 02 · BUSINESS TYPE · START DATE · VERSION · USERS
+            BUSINESS TYPE · START DATE · VERSION · USERS
           </p>
         </div>
 
