@@ -1,8 +1,166 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Pencil, Check, Trash2, Lock } from 'lucide-react';
 import { Project, Task, TaskStatus, ProjectDetails } from '../types';
 import { RainbowProgress } from './RainbowProgress';
-import { ProjectDetailsCard } from './ProjectDetailsCard';
+
+interface SwipeableTaskRowProps {
+  task: Task;
+  onToggleTaskComplete: (taskId: string) => void;
+  onUpdateTaskStatus: (taskId: string, status: TaskStatus) => void;
+  onDeleteTask: (taskId: string) => void;
+}
+
+const SwipeableTaskRow: React.FC<SwipeableTaskRowProps> = ({
+  task,
+  onToggleTaskComplete,
+  onUpdateTaskStatus,
+  onDeleteTask,
+}) => {
+  const isDone = task.status === 'done';
+  const [offsetX, setOffsetX] = useState(0);
+  const startXRef = useRef<number | null>(null);
+  const baseOffsetRef = useRef<number>(0);
+  const isDraggingRef = useRef(false);
+  const didMoveRef = useRef(false);
+
+  const REVEAL_WIDTH = 56;
+
+  const handleStart = (clientX: number) => {
+    startXRef.current = clientX;
+    baseOffsetRef.current = offsetX;
+    isDraggingRef.current = true;
+    didMoveRef.current = false;
+  };
+
+  const handleMove = (clientX: number) => {
+    if (!isDraggingRef.current || startXRef.current === null) return;
+    const deltaX = clientX - startXRef.current;
+    if (Math.abs(deltaX) > 4) {
+      didMoveRef.current = true;
+    }
+    const nextOffset = Math.min(0, Math.max(-REVEAL_WIDTH, baseOffsetRef.current + deltaX));
+    setOffsetX(nextOffset);
+  };
+
+  const handleEnd = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    startXRef.current = null;
+    if (offsetX < -REVEAL_WIDTH / 2) {
+      setOffsetX(-REVEAL_WIDTH);
+    } else {
+      setOffsetX(0);
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 8) {
+      if (e.deltaX > 0) {
+        setOffsetX(-REVEAL_WIDTH);
+      } else {
+        setOffsetX(0);
+      }
+    }
+  };
+
+  return (
+    <div
+      className="relative overflow-hidden select-none"
+      onWheel={handleWheel}
+    >
+      {/* Revealed Trash Can Button Underneath on Right */}
+      <button
+        type="button"
+        onClick={() => onDeleteTask(task.id)}
+        className="absolute right-0 top-0 bottom-0 w-[56px] bg-red-600 hover:bg-red-700 text-white flex items-center justify-center z-0 cursor-pointer"
+        title="Delete task"
+        aria-label="Delete task"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+
+      {/* Sliding Foreground Task Row */}
+      <div
+        onTouchStart={(e) => handleStart(e.touches[0].clientX)}
+        onTouchMove={(e) => handleMove(e.touches[0].clientX)}
+        onTouchEnd={handleEnd}
+        onMouseDown={(e) => handleStart(e.clientX)}
+        onMouseMove={(e) => handleMove(e.clientX)}
+        onMouseUp={handleEnd}
+        onMouseLeave={() => {
+          if (isDraggingRef.current) handleEnd();
+        }}
+        onClick={() => {
+          if (!didMoveRef.current && offsetX < 0) {
+            setOffsetX(0);
+          }
+        }}
+        style={{ transform: `translateX(${offsetX}px)` }}
+        className="relative z-10 bg-white dark:bg-neutral-950 pt-1.5 pb-2.5 pr-2 flex flex-col items-start justify-between space-y-1.5 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-none text-left cursor-grab active:cursor-grabbing"
+      >
+        {/* Top Row of Task Cell: Checkbox & Task Title */}
+        <div className="flex items-start justify-start gap-2.5 w-full">
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleTaskComplete(task.id);
+            }}
+            className={`mt-0.5 w-3.5 h-3.5 shrink-0 border flex items-center justify-center font-mono text-[10px] font-bold transition-none ${
+              isDone
+                ? 'bg-neutral-900 text-white dark:bg-white dark:text-black border-neutral-900 dark:border-white'
+                : 'border-neutral-400 hover:border-black dark:border-neutral-600 dark:hover:border-white'
+            }`}
+            title={isDone ? 'Mark as incomplete' : 'Mark as done'}
+            aria-label={isDone ? 'Mark as incomplete' : 'Mark as done'}
+          >
+            {isDone ? '✓' : ''}
+          </button>
+
+          <span
+            onClick={(e) => {
+              if (didMoveRef.current) return;
+              if (offsetX < 0) {
+                setOffsetX(0);
+                return;
+              }
+              e.stopPropagation();
+              onToggleTaskComplete(task.id);
+            }}
+            className={`font-mono text-xs sm:text-sm cursor-pointer select-none leading-tight text-left break-words ${
+              isDone
+                ? 'line-through text-neutral-400 dark:text-neutral-500'
+                : 'text-neutral-900 dark:text-neutral-100 font-medium'
+            }`}
+          >
+            {task.title}
+          </span>
+        </div>
+
+        {/* Bottom Row of Task Cell: Status Selector Only */}
+        <div className="pl-6 flex items-center justify-start font-mono text-[11px] leading-none">
+          <select
+            value={task.status}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) =>
+              onUpdateTaskStatus(task.id, e.target.value as TaskStatus)
+            }
+            className="px-1.5 py-0.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-[10px] uppercase font-mono text-neutral-800 dark:text-neutral-200 focus:outline-none cursor-pointer"
+          >
+            <option value="backlog">Backlog</option>
+            <option value="in_progress">In Progress</option>
+            <option value="review">Review</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface SprintSectionProps {
   projects: Project[];
@@ -31,13 +189,17 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
   const [statusFilter, setStatusFilter] = useState<'ALL' | TaskStatus>('ALL');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-  // Expanded project details panels state (map of projectId -> boolean)
+  // Expanded project details state (map of projectId -> boolean)
   const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({
-    'proj-hyperion': true,
+    'proj-hyperion': false,
   });
 
   // Track which project cards are unlocked for editing (projectId -> draft Project)
   const [editingProjects, setEditingProjects] = useState<Record<string, Project>>({});
+
+  // Track password visibility and clipboard copy feedback per project
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Track inline new task title per project
   const [newTaskInput, setNewTaskInput] = useState<Record<string, string>>({});
@@ -50,10 +212,32 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
     }));
   };
 
+  const togglePasswordVisibility = (projectId: string) => {
+    setVisiblePasswords((prev) => ({
+      ...prev,
+      [projectId]: !prev[projectId],
+    }));
+  };
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => {
+      setCopiedKey((prev) => (prev === key ? null : prev));
+    }, 1800);
+  };
+
   // Unlock a project card for editing, or confirm edit & lock again
   const handleToggleEditLock = (project: Project) => {
     const draft = editingProjects[project.id];
     if (draft) {
+      const cleanedDetails: ProjectDetails = {
+        liveSite: draft.details.liveSite.trim(),
+        hostedCompany: draft.details.hostedCompany.trim(),
+        adminName: draft.details.adminName.trim(),
+        adminPassword: draft.details.adminPassword || '',
+        notes: draft.details.notes || '',
+      };
       // Confirm edit & lock again -> saves to central state and updates Section 01 reference
       onUpdateProject({
         ...draft,
@@ -62,15 +246,18 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
         version: draft.version.trim() || project.version,
         startDate: draft.startDate || project.startDate,
         activeUsers: Number(draft.activeUsers) || 0,
+        details: cleanedDetails,
         lastTouched: new Date().toISOString(),
       });
+      onUpdateProjectDetails(project.id, cleanedDetails);
       setEditingProjects((prev) => {
         const next = { ...prev };
         delete next[project.id];
         return next;
       });
     } else {
-      // Unlock for editing
+      // Unlock for editing and ensure details are revealed
+      setExpandedDetails((prev) => ({ ...prev, [project.id]: true }));
       setEditingProjects((prev) => ({
         ...prev,
         [project.id]: {
@@ -94,6 +281,27 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
         [projectId]: {
           ...current,
           [field]: value,
+        },
+      };
+    });
+  };
+
+  const updateDraftDetailField = <K extends keyof ProjectDetails>(
+    projectId: string,
+    field: K,
+    value: ProjectDetails[K]
+  ) => {
+    setEditingProjects((prev) => {
+      const current = prev[projectId];
+      if (!current) return prev;
+      return {
+        ...prev,
+        [projectId]: {
+          ...current,
+          details: {
+            ...current.details,
+            [field]: value,
+          },
         },
       };
     });
@@ -256,6 +464,7 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
           const isDetailsOpen = !!expandedDetails[project.id];
           const draft = editingProjects[project.id];
           const isEditingProject = !!draft;
+          const showPassword = !!visiblePasswords[project.id];
 
           return (
             <article
@@ -263,268 +472,384 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
               id={`project-${project.id}`}
               className="border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-left"
             >
-              {/* Project Card Header Container: Left-aligned stacked rows at top & bottom */}
-              <div className="px-3 sm:px-5 pt-2 pb-2 min-h-[220px] border-b border-neutral-200 dark:border-neutral-800 flex flex-col justify-between items-start text-left">
-                {/* Top Edge Stacked Rows */}
-                <div className="w-full flex flex-col items-start space-y-2">
-                  {/* Row 1: Project Title, Version Number, Business Type, Start Date, Users + 2 Action Icons (Edit/Confirm-Lock & Delete) */}
-                  {isEditingProject ? (
-                    <div className="w-full flex flex-col items-start space-y-2 pt-0.5">
-                      <div className="w-full flex flex-wrap items-center justify-start gap-2">
-                        {/* Two Action Icons: Confirm Edit & Lock Again + Delete Project */}
-                        <div className="flex items-center gap-1.5 mr-1">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleEditLock(project)}
-                            className="p-1.5 bg-neutral-900 text-white dark:bg-white dark:text-black border border-neutral-900 dark:border-white hover:opacity-90 flex items-center gap-1 font-mono text-[10px] uppercase"
-                            title="Confirm edit and lock project again"
-                            aria-label="Confirm edit and lock project again"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            <Lock className="w-3 h-3" />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => onDeleteProject(project.id)}
-                            className="p-1.5 border border-neutral-300 dark:border-neutral-700 text-neutral-500 hover:text-red-600 hover:border-red-600 dark:hover:text-red-400 transition-none"
-                            title="Delete project"
-                            aria-label="Delete project"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                          [EDITING UNLOCKED — UPDATES SECTION 01]
-                        </span>
-                      </div>
-
-                      {/* Editable Fields Grid (Left-Aligned Stacked Rows) */}
-                      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 font-mono text-xs">
-                        <div>
-                          <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
-                            PROJECT NAME
-                          </label>
-                          <input
-                            type="text"
-                            value={draft.name}
-                            onChange={(e) => updateDraftField(project.id, 'name', e.target.value)}
-                            className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
-                            VERSION NUMBER
-                          </label>
-                          <input
-                            type="text"
-                            value={draft.version}
-                            onChange={(e) => updateDraftField(project.id, 'version', e.target.value)}
-                            className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs tabular-nums focus:outline-none focus:border-black dark:focus:border-white"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
-                            BUSINESS TYPE
-                          </label>
-                          <input
-                            type="text"
-                            value={draft.businessType}
-                            onChange={(e) =>
-                              updateDraftField(project.id, 'businessType', e.target.value)
-                            }
-                            className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
-                            START DATE
-                          </label>
-                          <input
-                            type="date"
-                            value={draft.startDate}
-                            onChange={(e) =>
-                              updateDraftField(project.id, 'startDate', e.target.value)
-                            }
-                            className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs tabular-nums focus:outline-none focus:border-black dark:focus:border-white"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
-                            NUMBER OF USERS
-                          </label>
-                          <input
-                            type="number"
-                            min={0}
-                            value={draft.activeUsers}
-                            onChange={(e) =>
-                              updateDraftField(project.id, 'activeUsers', Number(e.target.value))
-                            }
-                            className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs tabular-nums focus:outline-none focus:border-black dark:focus:border-white"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Sprint Title & Goal Editable Row */}
-                      <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs">
-                        <div>
-                          <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
-                            CURRENT SPRINT TITLE
-                          </label>
-                          <input
-                            type="text"
-                            value={draft.currentSprintName}
-                            onChange={(e) =>
-                              updateDraftField(project.id, 'currentSprintName', e.target.value)
-                            }
-                            className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
-                            SPRINT OBJECTIVE
-                          </label>
-                          <input
-                            type="text"
-                            value={draft.sprintGoal}
-                            onChange={(e) =>
-                              updateDraftField(project.id, 'sprintGoal', e.target.value)
-                            }
-                            className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Locked State Row 1: Action Icons (Edit & Delete) + Project Name + Version + Business Type + Start Date + Users */}
-                      <div className="flex flex-wrap items-center justify-start gap-2 leading-none">
-                        {/* Two Action Icons: 1. Edit Project (Unlocks), 2. Delete Project */}
-                        <div className="flex items-center gap-1 mr-1">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleEditLock(project)}
-                            className="p-1 border border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 hover:border-neutral-400 dark:hover:border-neutral-600 transition-none"
-                            title="Unlock to edit project (updates Section 01)"
-                            aria-label="Edit project"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => onDeleteProject(project.id)}
-                            className="p-1 border border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:border-red-400 transition-none"
-                            title="Delete project"
-                            aria-label="Delete project"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-
-                        <h3 className="font-mono text-base sm:text-lg font-bold tracking-tight text-neutral-950 dark:text-neutral-50 uppercase leading-none">
-                          {project.name}
-                        </h3>
-                        <span className="font-mono text-xs font-semibold text-neutral-600 dark:text-neutral-300 tabular-nums leading-none">
-                          {project.version}
-                        </span>
-                        <span className="text-neutral-300 dark:text-neutral-700">·</span>
-                        <span className="font-mono text-xs text-neutral-600 dark:text-neutral-400 leading-none">
-                          {project.businessType}
-                        </span>
-                        <span className="text-neutral-300 dark:text-neutral-700">·</span>
-                        <span className="font-mono text-xs text-neutral-500 dark:text-neutral-400 tabular-nums leading-none">
-                          STARTED {project.startDate}
-                        </span>
-                        <span className="text-neutral-300 dark:text-neutral-700">·</span>
-                        <span className="font-mono text-xs text-neutral-700 dark:text-neutral-300 font-semibold tabular-nums leading-none">
-                          {project.activeUsers.toLocaleString()} USERS
-                        </span>
-                      </div>
-
-                      {/* Locked State Row 2: Sprint Title & Objective */}
-                      <div className="flex flex-col items-start space-y-0.5 font-mono text-xs">
-                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 leading-tight">
-                          {project.currentSprintName}
-                        </span>
-                        {project.sprintGoal && (
-                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-tight">
-                            OBJECTIVE: {project.sprintGoal}
-                          </p>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Row 3: Isolated Last Touched Date (Left-Aligned) */}
-                  <div className="inline-flex items-center justify-start gap-2 border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 px-2.5 py-1 font-mono text-[11px] leading-none">
-                    <span className="text-[10px] uppercase tracking-wider text-neutral-400">
-                      LAST TOUCHED:
+              {/* Compressed & Combined Project Header + Details Container */}
+              <div className="px-3 sm:px-5 py-2.5 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col items-start text-left">
+                {/* Compact Title Bar (Always Visible: Toggle, Edit/Delete Icons, Title, Version, Velocity, Last Touched) */}
+                <div className="w-full flex flex-wrap items-center justify-start gap-x-2.5 gap-y-1.5 leading-none">
+                  {/* Sliding Toggle Control: Moving toggle leaves only title or reveals the rest of the details */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isDetailsOpen}
+                    onClick={() => toggleDetails(project.id)}
+                    className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white cursor-pointer select-none"
+                    title={isDetailsOpen ? 'Collapse to title only' : 'Reveal project details & credentials'}
+                  >
+                    <span
+                      className={`w-7 h-3.5 border flex items-center p-0.5 transition-none ${
+                        isDetailsOpen
+                          ? 'bg-neutral-900 border-neutral-900 dark:bg-white dark:border-white justify-end'
+                          : 'bg-neutral-100 border-neutral-400 dark:bg-neutral-900 dark:border-neutral-600 justify-start'
+                      }`}
+                    >
+                      <span
+                        className={`w-2 h-2 ${
+                          isDetailsOpen
+                            ? 'bg-white dark:bg-black'
+                            : 'bg-neutral-600 dark:bg-neutral-400'
+                        }`}
+                      />
                     </span>
-                    <span className="font-bold text-neutral-900 dark:text-neutral-100 tabular-nums">
-                      {formatTimeAgo(project.lastTouched)}
-                    </span>
-                    <span className="text-neutral-300 dark:text-neutral-700">·</span>
-                    <span className="text-[10px] text-neutral-400 tabular-nums">
-                      {project.lastTouched.replace('T', ' ').substring(0, 16)} UTC
-                    </span>
+                  </button>
+
+                  {/* Edit/Confirm-Lock & Delete Action Icons */}
+                  <div className="flex items-center gap-1">
+                    {isEditingProject ? (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleEditLock(project)}
+                        className="p-1 bg-neutral-900 text-white dark:bg-white dark:text-black border border-neutral-900 dark:border-white hover:opacity-90 flex items-center gap-0.5 font-mono text-[10px] uppercase"
+                        title="Confirm edit and lock project again"
+                        aria-label="Confirm edit and lock project again"
+                      >
+                        <Check className="w-3 h-3" />
+                        <Lock className="w-2.5 h-2.5" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleEditLock(project)}
+                        className="p-1 border border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 hover:border-neutral-400 dark:hover:border-neutral-600 transition-none"
+                        title="Unlock to edit project & details"
+                        aria-label="Edit project"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => onDeleteProject(project.id)}
+                      className="p-1 border border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:border-red-400 transition-none"
+                      title="Delete project"
+                      aria-label="Delete project"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
                   </div>
-                </div>
 
-                {/* Open Space in Middle of Header Container */}
-                <div className="flex-1 min-h-[36px]" />
+                  {/* Project Title (Clicking also toggles details when locked) */}
+                  <h3
+                    onClick={() => !isEditingProject && toggleDetails(project.id)}
+                    className="font-mono text-sm sm:text-base font-bold tracking-tight text-neutral-950 dark:text-neutral-50 uppercase leading-none cursor-pointer select-none"
+                  >
+                    {project.name}
+                  </h3>
 
-                {/* Bottom Edge Stacked Rows: Rainbow Progress & Expandable Details Trigger */}
-                <div className="w-full pt-3 border-t border-neutral-100 dark:border-neutral-900 flex flex-col items-start justify-end space-y-2">
-                  {/* Rainbow Progress Row */}
-                  <div className="flex flex-wrap items-center justify-start gap-3">
-                    <span className="font-mono text-[10px] uppercase text-neutral-400 tracking-wider leading-none">
-                      SPRINT VELOCITY:
-                    </span>
+                  <span className="font-mono text-xs font-semibold text-neutral-500 dark:text-neutral-400 tabular-nums leading-none">
+                    {project.version}
+                  </span>
+
+                  <span className="text-neutral-300 dark:text-neutral-700">·</span>
+
+                  {/* Compact Rainbow Velocity */}
+                  <div className="inline-flex items-center gap-1.5">
                     <RainbowProgress
                       completedCount={completedCount}
                       totalCount={projectTasks.length}
                       size="sm"
                       showLabel={true}
                     />
-                    <span className="text-neutral-300 dark:text-neutral-700">·</span>
-                    <span className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 tabular-nums leading-none">
-                      {completedCount}/{projectTasks.length} TASKS COMPLETED
+                    <span className="font-mono text-[10px] text-neutral-500 dark:text-neutral-400 tabular-nums leading-none">
+                      ({completedCount}/{projectTasks.length})
                     </span>
                   </div>
 
-                  {/* Expand Details Toggle Row at Very Bottom Edge */}
-                  <button
-                    onClick={() => toggleDetails(project.id)}
-                    className="font-mono text-xs text-neutral-800 dark:text-neutral-200 hover:text-black dark:hover:text-white flex items-center justify-start gap-2 uppercase tracking-wide group leading-none"
-                  >
-                    <span className="text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-neutral-100">
-                      {isDetailsOpen ? '▲' : '▼'}
-                    </span>
-                    <span>
-                      {isDetailsOpen
-                        ? 'HIDE PROJECT DETAILS & CREDENTIALS'
-                        : 'EXPAND PROJECT DETAILS, HOSTING & CREDENTIALS'}
-                    </span>
-                  </button>
-                </div>
-              </div>
+                  <span className="text-neutral-300 dark:text-neutral-700">·</span>
 
-              {/* Expandable Project Details Card Panel */}
-              {isDetailsOpen && (
-                <ProjectDetailsCard
-                  details={project.details}
-                  projectId={project.id}
-                  projectName={project.name}
-                  onUpdateDetails={(updated) => onUpdateProjectDetails(project.id, updated)}
-                />
-              )}
+                  {/* Compact Last Touched */}
+                  <span className="font-mono text-[10px] uppercase text-neutral-500 dark:text-neutral-400 tabular-nums leading-none">
+                    TOUCHED <strong className="text-neutral-900 dark:text-neutral-100">{formatTimeAgo(project.lastTouched)}</strong>
+                  </span>
+                </div>
+
+                {/* Expanded Combined Details & Edit Drawer (Hidden when toggle is off and not editing) */}
+                {(isDetailsOpen || isEditingProject) && (
+                  <div className="w-full pt-2.5 mt-2 border-t border-neutral-100 dark:border-neutral-900 flex flex-col items-start space-y-2 font-mono text-xs text-left">
+                    {isEditingProject && draft ? (
+                      <div className="w-full flex flex-col items-start space-y-2">
+                        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                          <div>
+                            <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                              PROJECT NAME
+                            </label>
+                            <input
+                              type="text"
+                              value={draft.name}
+                              onChange={(e) => updateDraftField(project.id, 'name', e.target.value)}
+                              className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                              VERSION
+                            </label>
+                            <input
+                              type="text"
+                              value={draft.version}
+                              onChange={(e) => updateDraftField(project.id, 'version', e.target.value)}
+                              className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs tabular-nums focus:outline-none focus:border-black dark:focus:border-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                              BUSINESS TYPE
+                            </label>
+                            <input
+                              type="text"
+                              value={draft.businessType}
+                              onChange={(e) => updateDraftField(project.id, 'businessType', e.target.value)}
+                              className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                              START DATE
+                            </label>
+                            <input
+                              type="date"
+                              value={draft.startDate}
+                              onChange={(e) => updateDraftField(project.id, 'startDate', e.target.value)}
+                              className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs tabular-nums focus:outline-none focus:border-black dark:focus:border-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                              USERS
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              value={draft.activeUsers}
+                              onChange={(e) => updateDraftField(project.id, 'activeUsers', Number(e.target.value))}
+                              className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs tabular-nums focus:outline-none focus:border-black dark:focus:border-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                              CURRENT SPRINT TITLE
+                            </label>
+                            <input
+                              type="text"
+                              value={draft.currentSprintName}
+                              onChange={(e) => updateDraftField(project.id, 'currentSprintName', e.target.value)}
+                              className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                              SPRINT OBJECTIVE
+                            </label>
+                            <input
+                              type="text"
+                              value={draft.sprintGoal}
+                              onChange={(e) => updateDraftField(project.id, 'sprintGoal', e.target.value)}
+                              className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                          <div>
+                            <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                              LIVE SITE URL
+                            </label>
+                            <input
+                              type="text"
+                              value={draft.details.liveSite}
+                              onChange={(e) => updateDraftDetailField(project.id, 'liveSite', e.target.value)}
+                              className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                              HOSTED COMPANY
+                            </label>
+                            <input
+                              type="text"
+                              value={draft.details.hostedCompany}
+                              onChange={(e) => updateDraftDetailField(project.id, 'hostedCompany', e.target.value)}
+                              className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                              ADMIN NAME
+                            </label>
+                            <input
+                              type="text"
+                              value={draft.details.adminName}
+                              onChange={(e) => updateDraftDetailField(project.id, 'adminName', e.target.value)}
+                              className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                              ADMIN PASSWORD
+                            </label>
+                            <input
+                              type="text"
+                              value={draft.details.adminPassword || ''}
+                              onChange={(e) => updateDraftDetailField(project.id, 'adminPassword', e.target.value)}
+                              className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="w-full">
+                          <label className="block text-[9px] uppercase text-neutral-400 mb-0.5">
+                            OPERATIONS NOTE
+                          </label>
+                          <input
+                            type="text"
+                            value={draft.details.notes || ''}
+                            onChange={(e) => updateDraftDetailField(project.id, 'notes', e.target.value)}
+                            className="w-full px-2 py-1 bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-none focus:border-black dark:focus:border-white"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full flex flex-col items-start space-y-1.5 text-[11px] leading-tight">
+                        {/* Row 1: Business Type, Start Date, Users, Sprint Name & Objective */}
+                        <div className="w-full flex flex-wrap items-center justify-start gap-x-2 gap-y-1 text-neutral-600 dark:text-neutral-300">
+                          <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                            {project.businessType}
+                          </span>
+                          <span className="text-neutral-300 dark:text-neutral-700">·</span>
+                          <span className="tabular-nums">STARTED {project.startDate}</span>
+                          <span className="text-neutral-300 dark:text-neutral-700">·</span>
+                          <span className="font-semibold tabular-nums">
+                            {project.activeUsers.toLocaleString()} USERS
+                          </span>
+                          <span className="text-neutral-300 dark:text-neutral-700">·</span>
+                          <span className="text-neutral-800 dark:text-neutral-200 font-semibold">
+                            {project.currentSprintName}
+                          </span>
+                          {project.sprintGoal && (
+                            <>
+                              <span className="text-neutral-300 dark:text-neutral-700">—</span>
+                              <span className="text-neutral-500 dark:text-neutral-400">
+                                {project.sprintGoal}
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Row 2: Live Site, Hosted Company, Admin Name, Admin Password */}
+                        <div className="w-full flex flex-wrap items-center justify-start gap-x-3 gap-y-1">
+                          <div className="inline-flex flex-wrap items-center gap-1">
+                            <span className="text-[10px] uppercase text-neutral-400">SITE:</span>
+                            <a
+                              href={project.details.liveSite}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-neutral-900 dark:text-neutral-100 font-semibold hover:underline break-all"
+                            >
+                              {project.details.liveSite}
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(project.details.liveSite, `${project.id}-site`)}
+                              className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline"
+                            >
+                              [{copiedKey === `${project.id}-site` ? 'COPIED' : 'COPY'}]
+                            </button>
+                          </div>
+
+                          <span className="text-neutral-300 dark:text-neutral-700">·</span>
+
+                          <div className="inline-flex flex-wrap items-center gap-1">
+                            <span className="text-[10px] uppercase text-neutral-400">HOST:</span>
+                            <span className="text-neutral-800 dark:text-neutral-200 font-medium">
+                              {project.details.hostedCompany}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(project.details.hostedCompany, `${project.id}-host`)}
+                              className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline"
+                            >
+                              [{copiedKey === `${project.id}-host` ? 'COPIED' : 'COPY'}]
+                            </button>
+                          </div>
+
+                          <span className="text-neutral-300 dark:text-neutral-700">·</span>
+
+                          <div className="inline-flex flex-wrap items-center gap-1">
+                            <span className="text-[10px] uppercase text-neutral-400">ADMIN:</span>
+                            <span className="text-neutral-800 dark:text-neutral-200 font-medium">
+                              {project.details.adminName}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(project.details.adminName, `${project.id}-admin`)}
+                              className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline"
+                            >
+                              [{copiedKey === `${project.id}-admin` ? 'COPIED' : 'COPY'}]
+                            </button>
+                          </div>
+
+                          <span className="text-neutral-300 dark:text-neutral-700">·</span>
+
+                          <div className="inline-flex flex-wrap items-center gap-1">
+                            <span className="text-[10px] uppercase text-neutral-400">PASS:</span>
+                            <span className="text-neutral-800 dark:text-neutral-200 select-all">
+                              {project.details.adminPassword
+                                ? showPassword
+                                  ? project.details.adminPassword
+                                  : '••••••••'
+                                : 'N/A'}
+                            </span>
+                            {project.details.adminPassword && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => togglePasswordVisibility(project.id)}
+                                  className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline"
+                                >
+                                  [{showPassword ? 'HIDE' : 'SHOW'}]
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(project.details.adminPassword!, `${project.id}-pass`)}
+                                  className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline"
+                                >
+                                  [{copiedKey === `${project.id}-pass` ? 'COPIED' : 'COPY'}]
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Row 3: Operations Note & Full UTC Timestamp */}
+                        <div className="w-full flex flex-wrap items-center justify-start gap-x-2 gap-y-1 text-neutral-500 dark:text-neutral-400">
+                          {project.details.notes && (
+                            <>
+                              <span>NOTE: {project.details.notes}</span>
+                              <span className="text-neutral-300 dark:text-neutral-700">·</span>
+                            </>
+                          )}
+                          <span className="text-[10px] tabular-nums">
+                            UPDATED {project.lastTouched.replace('T', ' ').substring(0, 16)} UTC
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Tasks List Container: Left-aligned stacked rows at top & bottom */}
               <div className="px-3 sm:px-5 pt-2 pb-2 min-h-[280px] bg-white dark:bg-neutral-950 flex flex-col justify-between items-start text-left">
@@ -542,84 +867,15 @@ export const SprintSection: React.FC<SprintSectionProps> = ({
                     </div>
                   ) : (
                     <div className="w-full divide-y divide-neutral-100 dark:divide-neutral-900 border-t border-b border-neutral-200 dark:border-neutral-800">
-                      {displayedTasks.map((task) => {
-                        const isDone = task.status === 'done';
-
-                        return (
-                          <div
-                            key={task.id}
-                            className="pt-1.5 pb-3 flex flex-col items-start justify-between space-y-1.5 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/30 transition-none text-left"
-                          >
-                            {/* Top Row of Task Cell: Checkbox & Task Title */}
-                            <div className="flex items-start justify-start gap-2.5 w-full">
-                              <button
-                                onClick={() => onToggleTaskComplete(task.id)}
-                                className={`mt-0.5 w-3.5 h-3.5 shrink-0 border flex items-center justify-center font-mono text-[10px] font-bold transition-none ${
-                                  isDone
-                                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-black border-neutral-900 dark:border-white'
-                                    : 'border-neutral-400 hover:border-black dark:border-neutral-600 dark:hover:border-white'
-                                }`}
-                                title={isDone ? 'Mark as incomplete' : 'Mark as done'}
-                                aria-label={isDone ? 'Mark as incomplete' : 'Mark as done'}
-                              >
-                                {isDone ? '✓' : ''}
-                              </button>
-
-                              <span
-                                onClick={() => onToggleTaskComplete(task.id)}
-                                className={`font-mono text-xs sm:text-sm cursor-pointer select-none leading-tight text-left ${
-                                  isDone
-                                    ? 'line-through text-neutral-400 dark:text-neutral-500'
-                                    : 'text-neutral-900 dark:text-neutral-100 font-medium'
-                                }`}
-                              >
-                                {task.title}
-                              </span>
-                            </div>
-
-                            {/* Bottom Row of Task Cell: Left-aligned Tags, Status Selector & Delete */}
-                            <div className="pl-6 flex flex-wrap items-center justify-start gap-2 font-mono text-[11px] text-neutral-400 dark:text-neutral-500 leading-none">
-                              <select
-                                value={task.status}
-                                onChange={(e) =>
-                                  onUpdateTaskStatus(task.id, e.target.value as TaskStatus)
-                                }
-                                className="px-1.5 py-0.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-[10px] uppercase font-mono text-neutral-800 dark:text-neutral-200 focus:outline-none cursor-pointer"
-                              >
-                                <option value="backlog">Backlog</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="review">Review</option>
-                                <option value="done">Done</option>
-                              </select>
-
-                              {task.assignedTo && (
-                                <>
-                                  <span>·</span>
-                                  <span>@{task.assignedTo}</span>
-                                </>
-                              )}
-
-                              {task.tags.map((tag) => (
-                                <React.Fragment key={tag}>
-                                  <span>·</span>
-                                  <span className="text-neutral-500 dark:text-neutral-400">
-                                    #{tag}
-                                  </span>
-                                </React.Fragment>
-                              ))}
-
-                              <span>·</span>
-                              <button
-                                onClick={() => onDeleteTask(task.id)}
-                                className="text-neutral-400 hover:text-red-600 dark:hover:text-red-400 text-[10px] uppercase"
-                                title="Delete task from sprint"
-                              >
-                                DELETE
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {displayedTasks.map((task) => (
+                        <SwipeableTaskRow
+                          key={task.id}
+                          task={task}
+                          onToggleTaskComplete={onToggleTaskComplete}
+                          onUpdateTaskStatus={onUpdateTaskStatus}
+                          onDeleteTask={onDeleteTask}
+                        />
+                      ))}
                     </div>
                   )}
                 </div>

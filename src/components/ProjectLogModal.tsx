@@ -97,12 +97,12 @@ export const ProjectLogModal: React.FC<ProjectLogModalProps> = ({
         </div>
 
         {/* Filter Bar */}
-        <div className="px-6 py-2.5 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs">
+        <div className="px-4 sm:px-6 py-2.5 border-b border-neutral-200 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-2 text-xs">
           <span className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
             FILTER BY ACTION TYPE:
           </span>
 
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             {['ALL', 'TASK_COMPLETE', 'VERSION_BUMP', 'DEPLOY', 'CONFIG_UPDATE'].map((act) => (
               <button
                 key={act}
@@ -119,9 +119,32 @@ export const ProjectLogModal: React.FC<ProjectLogModalProps> = ({
           </div>
         </div>
 
-        {/* Scrollable Logs Table */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <table className="w-full text-left font-mono text-xs">
+        {/* Scrollable Logs Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {/* Mobile Stacked Log List (< 640px) — Zero Horizontal Scroll */}
+          <div className="sm:hidden divide-y divide-neutral-100 dark:divide-neutral-900 font-mono text-xs text-left">
+            {filteredLogs.map((log) => (
+              <div key={log.id} className="py-2.5 flex flex-col items-start space-y-1">
+                <div className="w-full flex flex-wrap items-center justify-between gap-2 text-[10px]">
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {log.action}
+                  </span>
+                  <span className="text-neutral-500 dark:text-neutral-400 tabular-nums">
+                    {log.timestamp.replace('T', ' ').substring(0, 16)} UTC
+                  </span>
+                </div>
+                <div className="text-[11px] text-neutral-700 dark:text-neutral-300">
+                  {log.projectName} · <span className="text-neutral-400">@{log.author}</span>
+                </div>
+                <p className="text-[11px] text-neutral-800 dark:text-neutral-200 break-words leading-snug">
+                  {log.summary}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table (>= 640px) */}
+          <table className="hidden sm:table w-full text-left font-mono text-xs">
             <thead>
               <tr className="border-b border-neutral-300 dark:border-neutral-700 text-[10px] uppercase text-neutral-400 tracking-wider">
                 <th className="pb-2 font-medium">TIMESTAMP (UTC)</th>
@@ -158,7 +181,7 @@ export const ProjectLogModal: React.FC<ProjectLogModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-neutral-900/40">
+        <div className="px-4 sm:px-6 py-3 border-t border-neutral-200 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-2 bg-neutral-50 dark:bg-neutral-900/40">
           <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest">
             LOG INTEGRITY HASH: SHA-256 // VERIFIED
           </span>

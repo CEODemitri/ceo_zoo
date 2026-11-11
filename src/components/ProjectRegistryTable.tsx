@@ -147,8 +147,44 @@ export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
           </button>
         </div>
 
-        {/* ~25-35% More Compressed Reference Table (Leaves breathing room for PNG while allowing right-edge text to flow over image) */}
-        <div className="pointer-events-auto w-full md:w-[74%] lg:w-[68%] pt-2 overflow-x-auto">
+        {/* Mobile View (< 640px): Zero-Horizontal-Scroll Stacked Project Reference List */}
+        <div className="pointer-events-auto w-full pt-2 sm:hidden divide-y divide-neutral-200/60 dark:divide-neutral-800/60 border-t border-b border-neutral-200/80 dark:border-neutral-800/80 font-mono">
+          {projects.map((proj) => (
+            <div
+              key={proj.id}
+              onClick={() => onSelectProject(proj.id)}
+              className="py-2 flex flex-col items-start justify-between space-y-1 hover:bg-neutral-500/5 cursor-pointer text-left"
+            >
+              <div className="w-full flex flex-wrap items-baseline justify-between gap-2 leading-none">
+                <span className="font-semibold text-neutral-950 dark:text-neutral-50 text-xs">
+                  {proj.name}
+                </span>
+                <div className="flex items-center gap-2 text-[11px] tabular-nums">
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {proj.version}
+                  </span>
+                  <span className="text-neutral-300 dark:text-neutral-700">·</span>
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {proj.activeUsers.toLocaleString()} USERS
+                  </span>
+                </div>
+              </div>
+
+              <div className="w-full flex flex-wrap items-center justify-start gap-x-2 gap-y-0.5 text-[10px] text-neutral-500 dark:text-neutral-400 leading-tight">
+                <span className="text-neutral-700 dark:text-neutral-300">{proj.businessType}</span>
+                <span>·</span>
+                <span className="tabular-nums">{proj.startDate}</span>
+                <span>·</span>
+                <span className="text-neutral-400 dark:text-neutral-500 truncate max-w-[180px]">
+                  {proj.details.liveSite.replace(/^https?:\/\//, '')}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop/Tablet View (>= 640px): ~25-35% More Compressed Reference Table */}
+        <div className="pointer-events-auto hidden sm:block w-full md:w-[74%] lg:w-[68%] pt-2 overflow-x-auto">
           <table className="w-full text-left font-mono text-[11px] border-collapse">
             <thead>
               <tr className="border-b border-neutral-200/80 dark:border-neutral-800/80 text-[9px] uppercase text-neutral-500 dark:text-neutral-400 tracking-wider">
@@ -180,7 +216,7 @@ export const ProjectRegistryTable: React.FC<ProjectRegistryTableProps> = ({
                   </td>
 
                   {/* Business Type */}
-                  <td className="py-1.5 px-2.5 align-top text-left text-neutral-700 dark:text-neutral-300 whitespace-nowrap text-[11px] leading-none">
+                  <td className="py-1.5 px-2.5 align-top text-left text-neutral-700 dark:text-neutral-300 text-[11px] leading-tight">
                     {proj.businessType}
                   </td>
 

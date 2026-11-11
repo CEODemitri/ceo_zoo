@@ -156,37 +156,37 @@ export const ProjectDetailsCard: React.FC<ProjectDetailsCardProps> = ({
           </div>
         </form>
       ) : (
-        <div className="w-full pt-2 flex flex-col items-start justify-end space-y-1.5 font-mono text-xs text-left">
+        <div className="w-full pt-2 flex flex-col items-start justify-end space-y-2 sm:space-y-1.5 font-mono text-xs text-left min-w-0">
           {/* Row 1: Live Site & Hosted Platform */}
-          <div className="flex flex-wrap items-center justify-start gap-x-4 gap-y-1 leading-none">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase text-neutral-400">LIVE SITE:</span>
+          <div className="w-full flex flex-wrap items-center justify-start gap-x-3 gap-y-1 leading-tight">
+            <div className="flex flex-wrap items-center gap-1.5 min-w-0 max-w-full">
+              <span className="text-[10px] uppercase text-neutral-400 shrink-0">LIVE SITE:</span>
               <a
                 href={details.liveSite}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-neutral-900 dark:text-neutral-100 font-semibold hover:underline"
+                className="text-neutral-900 dark:text-neutral-100 font-semibold hover:underline break-all sm:break-normal"
               >
                 {details.liveSite}
               </a>
               <button
                 onClick={() => copyToClipboard(details.liveSite, 'site')}
-                className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline"
+                className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline shrink-0"
               >
                 [{copiedField === 'site' ? 'COPIED' : 'COPY'}]
               </button>
             </div>
 
-            <span className="text-neutral-300 dark:text-neutral-700">·</span>
+            <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">·</span>
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase text-neutral-400">HOSTED COMPANY:</span>
-              <span className="text-neutral-800 dark:text-neutral-200 font-medium">
+            <div className="flex flex-wrap items-center gap-1.5 min-w-0 max-w-full">
+              <span className="text-[10px] uppercase text-neutral-400 shrink-0">HOSTED COMPANY:</span>
+              <span className="text-neutral-800 dark:text-neutral-200 font-medium break-words">
                 {details.hostedCompany}
               </span>
               <button
                 onClick={() => copyToClipboard(details.hostedCompany, 'host')}
-                className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline"
+                className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline shrink-0"
               >
                 [{copiedField === 'host' ? 'COPIED' : 'COPY'}]
               </button>
@@ -194,25 +194,25 @@ export const ProjectDetailsCard: React.FC<ProjectDetailsCardProps> = ({
           </div>
 
           {/* Row 2: Admin Name & Admin Password */}
-          <div className="flex flex-wrap items-center justify-start gap-x-4 gap-y-1 leading-none">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase text-neutral-400">ADMIN NAME:</span>
-              <span className="text-neutral-800 dark:text-neutral-200 font-medium">
+          <div className="w-full flex flex-wrap items-center justify-start gap-x-3 gap-y-1 leading-tight">
+            <div className="flex flex-wrap items-center gap-1.5 min-w-0 max-w-full">
+              <span className="text-[10px] uppercase text-neutral-400 shrink-0">ADMIN NAME:</span>
+              <span className="text-neutral-800 dark:text-neutral-200 font-medium break-all sm:break-normal">
                 {details.adminName}
               </span>
               <button
                 onClick={() => copyToClipboard(details.adminName, 'admin')}
-                className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline"
+                className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline shrink-0"
               >
                 [{copiedField === 'admin' ? 'COPIED' : 'COPY'}]
               </button>
             </div>
 
-            <span className="text-neutral-300 dark:text-neutral-700">·</span>
+            <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">·</span>
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase text-neutral-400">ADMIN PASSWORD:</span>
-              <span className="text-neutral-800 dark:text-neutral-200 select-all">
+            <div className="flex flex-wrap items-center gap-1.5 min-w-0 max-w-full">
+              <span className="text-[10px] uppercase text-neutral-400 shrink-0">ADMIN PASSWORD:</span>
+              <span className="text-neutral-800 dark:text-neutral-200 select-all break-all sm:break-normal">
                 {details.adminPassword
                   ? showPassword
                     ? details.adminPassword
@@ -223,13 +223,13 @@ export const ProjectDetailsCard: React.FC<ProjectDetailsCardProps> = ({
                 <>
                   <button
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline"
+                    className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline shrink-0"
                   >
                     [{showPassword ? 'HIDE' : 'SHOW'}]
                   </button>
                   <button
                     onClick={() => copyToClipboard(details.adminPassword!, 'pass')}
-                    className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline"
+                    className="text-[10px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 uppercase underline shrink-0"
                   >
                     [{copiedField === 'pass' ? 'COPIED' : 'COPY'}]
                   </button>
@@ -240,9 +240,9 @@ export const ProjectDetailsCard: React.FC<ProjectDetailsCardProps> = ({
 
           {/* Row 3: Operations Note */}
           {details.notes && (
-            <div className="flex flex-wrap items-baseline justify-start gap-1.5 pt-0.5 leading-tight">
-              <span className="text-[10px] uppercase text-neutral-400">OPERATIONS NOTE:</span>
-              <span className="text-[11px] text-neutral-600 dark:text-neutral-400">
+            <div className="w-full flex flex-wrap items-baseline justify-start gap-1.5 pt-0.5 leading-tight">
+              <span className="text-[10px] uppercase text-neutral-400 shrink-0">OPERATIONS NOTE:</span>
+              <span className="text-[11px] text-neutral-600 dark:text-neutral-400 break-words">
                 {details.notes}
               </span>
             </div>
